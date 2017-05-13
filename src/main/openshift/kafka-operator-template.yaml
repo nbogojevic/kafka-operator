@@ -1,0 +1,178 @@
+id: kafka-operator
+kind: Template
+apiVersion: v1
+name: kafka-operator
+metadata:
+  name: kafka-operator
+  label:
+    app: kafka-operator
+    approle: operator
+    category: messaging
+  annotations:
+    description: Creates a Kafka operator.
+    tags: kafka,messaging
+    openshift.io/display-name: Kafka operator
+    iconClass: fa pficon-topology
+parameters:
+- description: Zookeeper cluster address
+  displayName: Zookeeper URL
+  name: ZOOKEEPER_BOOTSTRAP
+  value: "zookeeper:2181"
+  required: true
+- description: Set to 'true' to enable deletion of kafka topics managed by operator. 
+  displayName: Enable topic delete
+  name: ENABLE_TOPIC_DELETE
+  value: 'false'
+  required: false
+- description: Set to 'true' to import and start managing existing topics 
+  displayName: Import existing topics
+  name: IMPORT_TOPICS
+  value: 'false'
+  required: false
+- description: Default replication factor for kafka topics
+  displayName: Default replication factor
+  name: DEFAULT_REPL_FACTOR
+  value: '2'
+  required: false
+- description: Interval in seconds between updates to kafka-topics
+  displayName: Operator update interval  
+  name: REFRESH_INTERVAL
+  value: '60'
+  required: false
+- description: The password used for the Jolokia endpoint authentication
+  displayName: Jolokia password  
+  name: JOLOKIA_PASSWORD
+  generate: expression
+  from: '[a-zA-Z0-9]{15}'
+  required: true
+objects:
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: kafka-operator
+    label:
+      app: kafka-operator
+      approle: operator
+- apiVersion: v1
+  kind: RoleBinding
+  metadata:
+    name: kafka-operator
+    label:
+      app: kafka-operator
+      approle: operator
+  roleRef:
+    name: edit
+  subjects:
+  - kind: ServiceAccount
+    name: kafka-operator
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: kafka-operator
+    label:
+      app: kafka-operator
+      approle: operator
+  spec:
+    dockerImageRepository: nbogojevic/kafka-operator
+    tags:
+      - name: latest
+        importPolicy: 
+          scheduled: true
+        from:
+          kind: DockerImage
+          name: >-
+            nbogojevic/kafka-operator:latest
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: kafka-operator
+    label:
+      app: kafka-operator
+      approle: operator
+  spec:
+    triggers:
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - kafka-operator
+          from:
+            kind: ImageStreamTag
+            name: kafka-operator:latest
+      - type: ConfigChange
+    replicas: 1
+    selector:
+      deploymentconfig: kafka-operator
+    template:
+      metadata:
+        labels:
+          app: kafka-operator
+          deploymentconfig: kafka-operator
+      spec:
+        containers:
+          - name: kafka-operator
+            image: nbogojevic/kafka-operator
+            ports:
+              - name: jolokia
+                containerPort: 8778
+                protocol: TCP
+            env:
+              - name: ZOOKEEPER_BOOTSTRAP
+                value: "${ZOOKEEPER_BOOTSTRAP}"
+              - name: ENABLE_TOPIC_DELETE
+                value: "${ENABLE_TOPIC_DELETE}"
+              - name: DEFAULT_REPL_FACTOR
+                value: "${DEFAULT_REPL_FACTOR}"
+              - name: REFRESH_INTERVAL
+                value: "${REFRESH_INTERVAL}"
+              - name: AB_JOLOKIA_PASSWORD
+                value: "${JOLOKIA_PASSWORD}"
+              - name: IMPORT_TOPICS
+                value: "${IMPORT_TOPICS}"
+              - name: AB_JOLOKIA_PASSWORD_RANDOM
+                value: "false"
+            resources: {}
+            terminationMessagePath: /dev/termination-log
+            imagePullPolicy: Always
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirst
+        serviceAccountName: kafka-operator
+        serviceAccount: kafka-operator
+        securityContext: {}
+        volumes:
+        - name: hawkular-openshift-agent
+          configMap:
+            name: kafka-operator-metrics
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: kafka-operator-metrics
+    labels:
+      app: kafka-operator
+      approle: operator
+      role: metrics
+      metrics: hosa 
+  data:
+    hawkular-openshift-agent: |
+      endpoints:
+      - type: jolokia
+        protocol: https
+        port: 8778
+        path: /jolokia/
+        collection_interval: 30s
+        tls:
+          skip_certificate_validation: true
+        credentials:
+          username: jolokia
+          password: ${JOLOKIA_PASSWORD}
+        metrics:
+        - name: java.lang:type=Memory#HeapMemoryUsage#used
+          type: gauge
+          id: jvm.heap.used
+          units: B
+          tags:
+            jvm_metrics: true
+            jvm_heap: true
+    

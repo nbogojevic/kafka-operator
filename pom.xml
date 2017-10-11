@@ -11,7 +11,7 @@
 	<properties>
 		<fabric8.debug.enabled>true</fabric8.debug.enabled>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<version.kafka>0.10.2.0</version.kafka>
+		<version.kafka>0.11.0.1</version.kafka>
 		<exec-maven-plugin.version>1.5.0</exec-maven-plugin.version>
 	</properties>
 
@@ -26,51 +26,48 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>3.0.2</version>
 			</plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>exec-maven-plugin</artifactId>
-				<version>${exec-maven-plugin.version}</version>
-				<configuration>
-					<mainClass>nb.kafka.operator.KafkaOperator</mainClass>
-				</configuration>
-			</plugin>
 
 			<plugin>
 				<groupId>io.fabric8</groupId>
 				<artifactId>fabric8-maven-plugin</artifactId>
-				<version>3.3.5</version>
+				<version>3.5.28</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>resource</goal>
+							<goal>helm</goal>
+							<goal>build</goal>
+							<goal>push</goal>
+						</goals>
+					</execution>
+				</executions>
 				<configuration>
 					<verbose>true</verbose>
-					<generator>
-						<config>
-							<java-exec>
-								<mainClass>nb.kafka.operator.KafkaOperator</mainClass>
-							</java-exec>
-						</config>
-					</generator>
+					<images>
+						<image>
+							<name>nbogojevic/%a</name>
+							<build>
+								<from>fabric8/s2i-java</from>
+								<env>
+									<JAVA_MAIN_CLASS>nb.kafka.operator.KafkaOperator</JAVA_MAIN_CLASS>
+								</env>
+								<assembly>
+        							<descriptorRef>artifact-with-dependencies</descriptorRef>
+        						</assembly>
+							</build>
+						</image>
+					</images>
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
-
-	<repositories>
-		<repository>
-			<id>jboss-enterprise-maven-repository</id>
-			<url>https://maven.repository.redhat.com/ga/</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-	</repositories>
-
+	
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
@@ -95,12 +92,12 @@
 		<dependency>
 			<groupId>io.fabric8</groupId>
 			<artifactId>kubernetes-client</artifactId>
-			<version>1.4.14.redhat-000012</version>
+			<version>3.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>io.fabric8</groupId>
 			<artifactId>openshift-client</artifactId>
-			<version>1.4.14.redhat-000012</version>
+			<version>3.0.0</version>
 		</dependency>
 	</dependencies>
 </project>

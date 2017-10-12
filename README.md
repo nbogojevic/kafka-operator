@@ -27,7 +27,7 @@ Operator must run under service account that that view rights on ConfigMaps in p
 
 ### Configuring kafka operator
 
-Operator is configured using environment variables or environment variables:
+Operator is configured using environment variables or system properties:
 
 Environment variable | System property     | Description | Default value
 ---------------------|---------------------|-------------|--------------

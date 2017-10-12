@@ -9,7 +9,6 @@
 	<packaging>jar</packaging>
 
 	<properties>
-		<fabric8.debug.enabled>true</fabric8.debug.enabled>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<version.kafka>0.11.0.1</version.kafka>
 		<exec-maven-plugin.version>1.5.0</exec-maven-plugin.version>
@@ -40,15 +39,12 @@
 				<executions>
 					<execution>
 						<goals>
-							<goal>resource</goal>
-							<goal>helm</goal>
 							<goal>build</goal>
 							<goal>push</goal>
 						</goals>
 					</execution>
 				</executions>
 				<configuration>
-					<verbose>true</verbose>
 					<images>
 						<image>
 							<name>nbogojevic/%a</name>
@@ -67,7 +63,7 @@
 			</plugin>
 		</plugins>
 	</build>
-	
+
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.kafka</groupId>

@@ -44,8 +44,7 @@ Environment variable | System property     | Description | Default value
 JMX_METRICS | jmx.metrics | If set to true metrics are exposed as JMX beans | true
 LOG_METRICS | log.metrics | If set to true activates logging metrics to console | false
 LOG_METRICS_INTERVAL | log.metrics.interval | Interval in seconds of logging metrics to console  | 60
-OPENTRACING_ENABLED | opentracing.enabled | Activates open-tracing experimental feature. | false
-
+LOG_LEVEL | LOG_LEVEL | Enabled log level | info
 
 ## How to manage kafka topics
 
@@ -152,6 +151,6 @@ The operator can import existing kafka topics from brokers and start managing th
 
 ## TODO
 
-* HOSA Metrics creation
+* Prometheus Metrics creation
 * Kafka cluster creation
 * Investigate using watch instead of poll

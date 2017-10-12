@@ -84,3 +84,6 @@ buildNumber.properties
 
 # Exclude maven wrapper
 !/.mvn/wrapper/maven-wrapper.jar
+
+# Exclude kubernetes files
+.kube/

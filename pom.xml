@@ -54,6 +54,7 @@
 									<JAVA_MAIN_CLASS>nb.kafka.operator.KafkaOperator</JAVA_MAIN_CLASS>
 								</env>
 								<assembly>
+									<basedir>/deployments</basedir>
         							<descriptorRef>artifact-with-dependencies</descriptorRef>
         						</assembly>
 							</build>
@@ -76,9 +77,9 @@
 			<version>${version.kafka}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-jdk14</artifactId>
-			<version>1.7.21</version>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>1.2.3</version>
 		</dependency>
 		<dependency>
 			<groupId>io.dropwizard.metrics</groupId>

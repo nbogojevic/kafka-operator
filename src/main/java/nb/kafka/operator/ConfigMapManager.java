@@ -1,20 +1,15 @@
 package nb.kafka.operator;
 
+import static java.util.stream.Collectors.toList;
 import static nb.common.Config.getProperty;
 
-import java.io.Closeable;
 import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,105 +17,85 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapList;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.Watcher;
 import nb.common.Config;
 
-public class ConfigMapManager implements Watcher<ConfigMap>, Supplier<List<Topic>>, Closeable {
+public class ConfigMapManager extends AbstractKubernetesBasedManager<ConfigMap> {
+
+  private static final String PROPERTIES_KEY = "properties";
+
+  private static final String REPLICATION_FACTOR_KEY = "replication-factor";
+
+  private static final String PARTITIONS_KEY = "partitions";
+
+  private static final String TOPIC_NAME_KEY = "name";
+  
+  private static final String ACL_KEY = "acl";
+
+  private static final String KAFKA_TOPIC_LABEL_VALUE = "kafka-topic";
+
+  private static final String CONFIG_LABEL = "config";
 
   private final static Logger log = LoggerFactory.getLogger(ConfigMapManager.class);
 
-  private DefaultKubernetesClient kubeClient;
-  private KafkaUtilities kafkaUtils;
-
-  public ConfigMapManager() {
-    kubeClient = new DefaultKubernetesClient();
+  public ConfigMapManager(KafkaOperator operator, Map<String, String> labels) {
+    super(ConfigMap.class, operator, labels);
   }
 
+  @Override
   public List<Topic> get() {
-    log.debug("Scanning {} for ConfigMaps.", kubeClient.getNamespace());
-    ConfigMapList list = kubeClient.configMaps().withLabel("config", "kafka-topic").list();
+    log.debug("Scanning {} for ConfigMaps.", kubeClient().getNamespace());
+    ConfigMapList list = kubeClient().configMaps().withLabels(labels()).list();
     log.debug("Scanned {}", list);
-    return list.getItems().stream().map(this::kafkaTopicBuilder).filter(Objects::nonNull)
-                        .collect(Collectors.toList());
+    return list.getItems().stream().map(this::topicBuilder).filter(Objects::nonNull)
+                        .collect(toList());
   }
-
-  private Topic kafkaTopicBuilder(ConfigMap cm) {
+  
+  @Override
+  protected Topic topicBuilder(ConfigMap cm) {
     try {
-      Properties props = new Properties();
-      props.load(new StringReader(getProperty(cm.getData(), "properties", "")));
-
-      Boolean deleted = getProperty(cm.getMetadata().getAnnotations(), "alpha.topic.kafka.nb/deleted", false);
-      return new Topic(getProperty(cm.getData(), "name", cm.getMetadata().getName()), 
-                       getProperty(cm.getData(), "num.partitions", 0),
-                       getProperty(cm.getData(), "repl.factor", 0), 
-                       Config.mapFromProperties(props), deleted);
+      return new Topic(getProperty(cm.getData(), TOPIC_NAME_KEY, cm.getMetadata().getName()), 
+                       getProperty(cm.getData(), PARTITIONS_KEY, 0),
+                       getProperty(cm.getData(), REPLICATION_FACTOR_KEY, (short) 0), 
+                       Config.propertiesFromString(getProperty(cm.getData(), PROPERTIES_KEY, "")), 
+                       getProperty(cm.getData(), ACL_KEY, false));
     } catch (IOException e) {
-      log.error("Unable to parse properties from configmap " + cm.getMetadata().getName(), e);
+      log.error("Unable to parse properties from ConfigMap {}", cm.getMetadata().getName(), e);
       return null;
     }
   }
   
-  public void create(Topic topic) {
+  @Override
+  public void createResource(Topic topic) {
     Map<String, String> data = new HashMap<>();
-    data.put("name", String.valueOf(topic.getName()));
-    data.put("num.partitions", String.valueOf(topic.getPartitions()));
-    data.put("repl.factor", String.valueOf(topic.getReplicationFactor()));
-    try {
-      Properties props = Config.propertiesFromMap(topic.getProperties());
-      StringWriter sw = new StringWriter();
-      props.store(sw, null);
-      data.put("properties", sw.toString());
-    } catch (IOException e) {
-      log.error("This exception should not occur.", e);
-    }
-    Map<String, String> labels = new HashMap<>();
-    labels.put("config", "kafka-topic");
-    labels.put("app", "kafka-operator");
+    data.put(TOPIC_NAME_KEY, String.valueOf(topic.getName()));
+    data.put(PARTITIONS_KEY, String.valueOf(topic.getPartitions()));
+    data.put(REPLICATION_FACTOR_KEY, String.valueOf(topic.getReplicationFactor()));
+    data.put(PROPERTIES_KEY, Config.propertiesAsString(topic.getProperties()));
+    data.put(ACL_KEY, String.valueOf(topic.isAcl()));
+    Map<String, String> labels = labels();
+    labels.put(GENERATOR_LABEL, operator.getGeneratorId());
     Map<String, String> annotations = new HashMap<>();
-    annotations.put("alpha.topic.kafka.nb/deleted", "false");
-    annotations.put("alpha.topic.kafka.nb/generated", ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT));
+    annotations.put(GENERATED_ANNOTATION, ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT));
     ConfigMap cm = new ConfigMapBuilder()
-                        .withNewMetadata().withName(cleanName(topic.getName())).withLabels(labels).withAnnotations(annotations).endMetadata()
+                        .withNewMetadata()
+                        .withName(cleanName(topic.getName()))
+                        .withLabels(labels)
+                        .withAnnotations(annotations)
+                        .endMetadata()
                         .withData(data).build();
-    cm = kubeClient.configMaps().create(cm);
+    cm = kubeClient().configMaps().create(cm);
     log.info("Created ConfigMap {} for topic {}", cm, topic);    
   }
 
-  private String cleanName(String name) {
-    return name.replace('_', '-').toLowerCase();
-  }
-
   @Override
-  public void close() {
-    log.info("Closing k8s communication.");
-    kubeClient.close();
+  public void watch() {
+    log.debug("Watcihing {} for ConfigMap changes", kubeClient().getNamespace());
+    watch = kubeClient().configMaps().withLabels(labels()).watch(this);
   }
 
-  public void watch(KafkaUtilities kafkaUtils) {
-    this.kafkaUtils = kafkaUtils;
-    kubeClient.configMaps().withLabel("config", "kafka-topic").watch(this);
-  }
-
-  @Override
-  public void eventReceived(Watcher.Action action, ConfigMap map) {
-    switch (action) {
-      case ADDED:
-      case MODIFIED:
-        kafkaUtils.manageTopic(kafkaTopicBuilder(map));
-        break;
-      case DELETED:
-        kafkaUtils.deleteTopic(kafkaTopicBuilder(map).getName());
-        break;
-      case ERROR:
-    }
-  }
-
-  @Override
-  public void onClose(KubernetesClientException cause) {
-    if (cause != null) {
-      log.error("Exception while closing config map watch", cause);
-    }
+  protected Map<String, String> labels() {
+    Map<String, String> labels = super.labels();
+    labels.put(CONFIG_LABEL, KAFKA_TOPIC_LABEL_VALUE);
+    return labels;
   }
 }

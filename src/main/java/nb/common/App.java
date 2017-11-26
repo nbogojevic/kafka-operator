@@ -1,7 +1,6 @@
 package nb.common;
 
 import java.lang.management.ManagementFactory;
-import java.util.concurrent.TimeUnit;
 
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.MBeanRegistrationException;
@@ -14,8 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Slf4jReporter;
-import com.codahale.metrics.Slf4jReporter.LoggingLevel;
 
 public final class App {
 
@@ -35,15 +32,7 @@ public final class App {
   }
 
   public static void start(String metricsDomain) {
-    if (Config.getSystemPropertyOrEnvVar("jmx.metrics", true)) {
-      JmxReporter.forRegistry(metrics).inDomain(metricsDomain).build().start();
-    }
-    if (Config.getSystemPropertyOrEnvVar("log.metrics", false)) {
-      Slf4jReporter.forRegistry(metrics).outputTo(LoggerFactory.getLogger(App.class))
-                   .convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MILLISECONDS)
-                   .withLoggingLevel(LoggingLevel.INFO).build()
-                   .start(Config.getSystemPropertyOrEnvVar("log.metrics.interval", 60), TimeUnit.SECONDS);
-    }
+    JmxReporter.forRegistry(metrics()).inDomain(metricsDomain).build().start();
   }
 
   public static boolean registerMBean(Object bean, String name) {
@@ -52,7 +41,7 @@ public final class App {
       return true;
     } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException
              | MalformedObjectNameException e) {
-      log.error("Unable to register monitored topics MBean. They will be no exposed via JMX.", e);
+      log.error("Unable to register monitored topics MBean. They will not be exposed via JMX.", e);
       return false;
     }
   }

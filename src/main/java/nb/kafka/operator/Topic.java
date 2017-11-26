@@ -5,24 +5,23 @@ import java.util.Map;
 public class Topic {
   private final String name;
   private final int partitions;
-  private final int replicationFactor;
+  private final short replicationFactor;
   private final Map<String, String> properties;
-  private final boolean deleted;
-  
-  public Topic(String name, int partitions, int replicationFactor, Map<String, String> properties, boolean deleted) {
+  private final boolean acl;
+
+  public Topic(String name, int partitions, short replicationFactor, Map<String, String> properties, boolean acl) {
     super();
     this.name = name;
     this.partitions = partitions;
     this.replicationFactor = replicationFactor;
-    this.properties = properties;
-    this.deleted = deleted;
+    this.properties = properties;    this.acl = acl;
   }
 
   public String getName() {
     return name;
   }
   
-  public int getReplicationFactor() {
+  public short getReplicationFactor() {
     return replicationFactor;
   }
 
@@ -34,10 +33,10 @@ public class Topic {
     return properties;
   }
 
-  public boolean isDeleted() {
-    return deleted;
+  public boolean isAcl() {
+    return acl;
   }
-
+  
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
@@ -47,8 +46,8 @@ public class Topic {
     builder.append(partitions);
     builder.append(", replicationFactor=");
     builder.append(replicationFactor);
-    builder.append(", deleted=");
-    builder.append(deleted);
+    builder.append(", acl=");
+    builder.append(acl);
     builder.append(", properties=");
     builder.append(properties);
     builder.append("]");

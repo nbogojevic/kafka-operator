@@ -4,14 +4,18 @@
 
 	<groupId>nb</groupId>
 	<artifactId>kafka-operator</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 
 	<packaging>jar</packaging>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<version.kafka>0.11.0.1</version.kafka>
-		<exec-maven-plugin.version>1.5.0</exec-maven-plugin.version>
+		<version.kafka>1.0.0</version.kafka>
+		<version.logback>1.2.3</version.logback>
+		<version.metrics>3.2.3</version.metrics>
+		<version.fabric8.k8s.client>3.0.1</version.fabric8.k8s.client>
+		<version.fabric8.openshift.client>3.0.3</version.fabric8.openshift.client>
+		<version.prometheus.exproter>0.1.0</version.prometheus.exproter>
 	</properties>
 
 	<build>
@@ -19,7 +23,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.6.1</version>
+				<version>3.7.0</version>
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
@@ -35,12 +39,12 @@
 			<plugin>
 				<groupId>io.fabric8</groupId>
 				<artifactId>fabric8-maven-plugin</artifactId>
-				<version>3.5.28</version>
+				<version>3.5.33</version>
 				<executions>
 					<execution>
 						<goals>
 							<goal>build</goal>
-							<goal>push</goal>
+							<goal>resource</goal>
 						</goals>
 					</execution>
 				</executions>
@@ -54,8 +58,49 @@
 									<JAVA_MAIN_CLASS>nb.kafka.operator.KafkaOperator</JAVA_MAIN_CLASS>
 								</env>
 								<assembly>
-									<basedir>/deployments</basedir>
-        							<descriptorRef>artifact-with-dependencies</descriptorRef>
+
+									<targetDir>/</targetDir>
+
+									<inline>
+										<includeBaseDirectory>false</includeBaseDirectory>
+										<dependencySets>
+											<dependencySet>
+												<useProjectArtifact>true</useProjectArtifact>
+												<includes>
+													<include>${project.groupId}:${project.artifactId}</include>
+												</includes>
+												<outputFileNameMapping>${project.build.finalName}.${artifact.extension}</outputFileNameMapping>
+												<outputDirectory>deployments</outputDirectory>
+											</dependencySet>
+											<dependencySet>
+												<useProjectArtifact>false</useProjectArtifact>
+												<excludes>
+													<exclude>*:jmx_prometheus_javaagent</exclude>
+												</excludes>
+												<scope>runtime</scope>
+												<fileMode>0644</fileMode>
+												<outputDirectory>deployments</outputDirectory>
+											</dependencySet>
+											<dependencySet>
+												<useProjectArtifact>false</useProjectArtifact>
+												<includes>
+													<include>*:jmx_prometheus_javaagent</include>
+												</includes>
+												<outputFileNameMapping>jmx_prometheus_javaagent.${artifact.extension}</outputFileNameMapping>
+												<scope>runtime</scope>
+												<fileMode>0644</fileMode>
+												<outputDirectory>opt/prometheus</outputDirectory>
+											</dependencySet>
+										</dependencySets>
+										<!-- Add a classpath file, too. Doesn't harm when not existant -->
+										<fileSets>
+											<fileSet>
+												<directory>src/main/conf</directory>
+												<outputDirectory>.</outputDirectory>
+												<fileMode>0664</fileMode>
+											</fileSet>
+										</fileSets>
+									</inline>
         						</assembly>
 							</build>
 						</image>
@@ -68,33 +113,33 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka_2.12</artifactId>
-			<version>${version.kafka}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
 			<artifactId>kafka-clients</artifactId>
 			<version>${version.kafka}</version>
 		</dependency>
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
-			<version>1.2.3</version>
+			<version>${version.logback}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.dropwizard.metrics</groupId>
 			<artifactId>metrics-core</artifactId>
-			<version>3.2.2</version>
+			<version>${version.metrics}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.prometheus.jmx</groupId>
+			<artifactId>jmx_prometheus_javaagent</artifactId>
+			<version>${version.prometheus.exproter}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.fabric8</groupId>
 			<artifactId>kubernetes-client</artifactId>
-			<version>3.0.0</version>
+			<version>${version.fabric8.k8s.client}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.fabric8</groupId>
 			<artifactId>openshift-client</artifactId>
-			<version>3.0.0</version>
+			<version>${version.fabric8.openshift.client}</version>
 		</dependency>
 	</dependencies>
 </project>

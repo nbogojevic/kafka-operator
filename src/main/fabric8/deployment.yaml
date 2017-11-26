@@ -1,11 +1,36 @@
 spec:
   template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "9779"
     spec:
       containers:
         - env:
+          - name: BOOTSTRAP_SERVER
+            value: "kafka:9092"
           - name: IMPORT_TOPICS
-            value: true
+            value: "true"
           - name: LOG_LEVEL
-            value: debug
-          - name: ENABLE_TOPIC_DELETE
-            value: true
+            value: "info"
+          - name: DEFAULT_REPLICATION_FACTOR
+            value: "2"
+          - name: OPERATOR_ID
+            value: "kafka-operator"
+          - name: STANDARD_LABELS
+            value: ""
+          - name: ENABLE_ACL
+            value: "true"
+          - name: STANDARD_ACL_LABELS
+            value: ""
+          - name: USERNAME_POOL_SECRET
+            value: "kafka-cluster-kafka-auth-pool"
+          - name: CONSUMED_USERNAMES_SECRET
+            value: "kafka-cluster-kafka-consumed-auth-pool"
+          ports:
+          - containerPort: 9779
+            name: prometheus
+          - containerPort: 8778
+            name: jolokia
+           

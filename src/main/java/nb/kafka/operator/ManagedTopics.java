@@ -1,16 +1,27 @@
 package nb.kafka.operator;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ManagedTopics implements ManagedTopicsMXBean {
-  private List<Topic> managedTopics;
+  private Map<String, Topic> managedTopics = new ConcurrentHashMap<>();
 
   @Override
   public List<Topic> getManagedTopics() {
-    return managedTopics;
+    return new ArrayList<>(managedTopics.values());
   }
 
-  public void setManagedTopics(List<Topic> managedTopics) {
-    this.managedTopics = managedTopics;
+  void add(Topic topic) {
+    managedTopics.put(topic.getName(), topic);
+  }
+
+  void delete(String topicName) {
+    managedTopics.remove(topicName);
+  }
+
+  public int size() {
+    return managedTopics.size();
   }
 }

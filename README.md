@@ -5,25 +5,27 @@ Kafka operator is a process that automatically manages creation and deletion of 
 ## How does it work
 
 Operator monitors ConfigMap Kubernetes resources that are tagged with `config=kafka-topic` label. From those ConfigMaps, operator extracts information
-about kafka topic to create/update. This check is done periodically, and the period by default is every 60s.
+about kafka topic to create/update. This check is by watching all changes to ConfigMaps with the this label.
 
 ## How to use kafka operator
+
+Start kafka operator within a project. The simplest way to do it in Kubernetes is as follows:
+
+```bash
+kubectl apply -f target/classes/META-INF/fabric8/kubernetes.yml
+```
 
 Start kafka operator within a project. The simplest way to do it in OpenShift is as follows:
 
 ```bash
-oc process -f src/main/openshift/kafka-operator-template.yaml | oc create -f -
+oc apply -f target/classes/META-INF/fabric8/openshift.yml
 ```
 
-If your zookeeper instance is not available on `zookeeper:2181` you should specify it when using `oc process`:
+If your kafka instance is not available on `kafka:9092` you should modify value of BOOTSTRAP_SERVER environment variable.
 
-```bash
-oc process -v ZOOKEEPER_BOOTSTRAP=yourzookeeperaddressandport -f src/main/openshift/kafka-operator-template.yaml | oc create -f -`.
-```
+Kubernetes should be configured to have only one instance of the operator running per kafka cluster. Having several instances should not cause an issue, but will result in useless interactions with cluster.
 
-Kubernetes should be configured to have only one instance of the operator running. Having several instances should not cause an issue, but will result in useless interactions with zookeeper and kafka cluster.
-
-Operator must run under service account that that view rights on ConfigMaps in project where it runs. Zookeeper and Kafka clusters must be accessible from operator's namespace.
+Operator must run under service account that that view rights on ConfigMaps in project where it runs. Kafka clusters must be accessible from operator's namespace.
 
 ### Configuring kafka operator
 
@@ -31,20 +33,16 @@ Operator is configured using environment variables or system properties:
 
 Environment variable | System property     | Description | Default value
 ---------------------|---------------------|-------------|--------------
-ZOOKEEPER_BOOTSTRAP  | zookeeper.bootstrap | Address of zookeeper cluster | zookeeper:2181
-DEFAULT_REPL_FACTOR  | default.repl.factor | Default replication factor to use when one is not specified in ConfigMap | 2
-REFRESH_INTERVAL     | refresh.interval    | Interval in seconds between two actions of the operator | 60
-ENABLE_TOPIC_DELETE  | enable.topic.delete | If set to true activates topic delete functionality | false
-IMPORT_TOPICS        | import.topics | If set to true existing topics in kafka cluster will be imported and will be managed by operator | false
-
-Following environment variables also influence behavior, but can't be set using openshift template as it is:
-
-Environment variable | System property     | Description | Default value
----------------------|---------------------|-------------|--------------
-JMX_METRICS | jmx.metrics | If set to true metrics are exposed as JMX beans | true
-LOG_METRICS | log.metrics | If set to true activates logging metrics to console | false
-LOG_METRICS_INTERVAL | log.metrics.interval | Interval in seconds of logging metrics to console  | 60
-LOG_LEVEL | LOG_LEVEL | Enabled log level | info
+BOOTSTRAP_SERVER     | bootstrap.server | Address of kafka cluster | kafka:9092
+DEFAULT_REPLICATION_FACTOR | default.replication.factor | Default replication factor to use when one is not specified in ConfigMap | 2
+IMPORT_TOPICS        | import.topics | I	f set to true existing topics in kafka cluster will be imported and will be managed by operator | false
+STANDARD_LABELS      | standard.labels| Comma-separated list of labels that must be set on ConfigMap that are taken into account| empty list
+ENABLE_ACL           | enable.acl | If set to true activates acl managment | false
+STANDARD_ACL_LABELS  | standard.acl.labels| Comma-separated list of labels that must be set on deployments that are taken into account| empty list
+USERNAME_POOL_SECRET  | username.pool.secret| Name of the secret containing pool of available usernames | kafka-cluster-kafka-auth-pool
+CONSUMED_USERNAMES_SECRET | consumed.usernames.secret| Name of the secret containing list of already used usernames | kafka-cluster-kafka-consumed-auth-pool
+OPERATOR_ID          | operator.id| Unique id of the operator in a namespace | kafka-operator
+LOG_LEVEL            | LOG_LEVEL | Set log level (debug|info|warn|error) | info
 
 ## How to manage kafka topics
 
@@ -58,8 +56,8 @@ metadata:
   labels:
     config: kafka-topic  
 data:
-   num.partitions: 20
-   repl.factor: 3
+   partitions: 20
+   replication-factor: 3
    properties: |
      retention.ms=1000000
 ```
@@ -67,10 +65,10 @@ data:
 Note that the name of file is not important. Once the file has been created, create the resource. For example, in openshift, do:
 
 ```bash
-oc create -f my-kafka-topic.yaml
+kubectl create -f my-kafka-topic.yaml
 ```
 
-During next periodic check, the operator will read the ConfigMap and create a topic called `my-kafka-topic` with 20 partitions, replication factor of 3 and setting topic's `retention.ms` property to 1000000. Note that properties are represented as single ConfigMap key. If kafka topic contains capital characters or underscores, you can use `name` key in ConfigMap's `data` to specify correct name:
+On ConfigMap change, the operator will read the ConfigMap and create a topic called `my-kafka-topic` with 20 partitions, replication factor of 3 and setting topic's `retention.ms` property to 1000000. Note that properties are represented as single ConfigMap key. If kafka topic contains capital characters or underscores, you can use `name` key in ConfigMap's `data` to specify correct name:
 
 ```yaml
 apiVersion: v1
@@ -81,18 +79,18 @@ metadata:
     config: kafka-topic  
 data:
    name: Underscore_Kafka_Topic
-   num.partitions: 20
-   repl.factor: 3
+   partitions: 20
+   replication-factor: 3
    properties: |
      retention.ms=1000000
 ```
 
-Kafka operator only manages topics that are defined in ConfigMaps. If a ConfigMap for a topic is deleted, the operator will no longer manage it. On the other hand, if a new ConfigMap is created for an already existing topic, the operator will start managing it.
+Kafka operator only manages topics that are defined in ConfigMaps. If a ConfigMap for a topic is deleted, the operator will delete it and no longer manage it. On the other hand, if a new ConfigMap is created for an already existing topic, the operator will start managing it.
 
 Default behavior:
 
-* if `num.partitions` is not provided, the number of partitions will be set to number of brokers
-* if `repl.factor` is not provided, the `DEFAULT_REPL_FACTOR` value is used.
+* if `partitions` is not provided, the number of partitions will be set to number of brokers
+* if `replication-factor` is not provided, the `DEFAULT_REPLICATION_FACTOR` value is used.
 
 #### Protected topics
 
@@ -110,8 +108,8 @@ metadata:
   labels:
     config: kafka-topic  
 data:
-   num.partitions: 20
-   repl.factor: 3
+   partitions: 20
+   replication-factor: 3
    properties: |
      retention.ms=1000000
      compression.type=producer
@@ -125,32 +123,12 @@ Known limitations:
 
 ### Deleting kafka topics
 
-To enable deletion of existing kafka topics, the operator must be run with `ENABLE_TOPIC_DELETE` set to `true` and topic deletion must be enabled in kafka cluster. If that is the case, a topic can be deleted by setting its ConfigMap's annotation `alpha.topic.kafka.nb/deleted` to `true`. For example to delete the topic we have defined, change its ConfigMap as follows:
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: my-kafka-topic
-  labels:
-    config: kafka-topic  
-  annotations:
-    alpha.topic.kafka.nb/deleted: 'true'
- data:
-   num.partitions: 20
-   repl.factor: 3
-   properties: |
-     retention.ms=1000000
-```
-
-During next periodic check, the operator will delete the specified topic. Note that as with all other operations, this cannot be undone.
+To delete existing kafka topic managed by operator, just delete its ConfigMap.
 
 ### Importing existing kafka topics
 
-The operator can import existing kafka topics from brokers and start managing them. This is done by starting operator with environment variable `IMPORT_TOPICS` or system property `import.topics` set to `true`. This will import at startup all existing topics that don't start with double underscore (`__`). For each one, operator creates a ConfigMap with name that is same as the name of topic (with underscores replaced with dashes), and data content containing true name, number of partitions, replication factor and properties if any has been set. Its annotation `alpha.topic.kafka.nb/generated` is set the time of importing.
+The operator can import existing kafka topics from brokers and start managing them. This is done by starting operator with environment variable `IMPORT_TOPICS` or system property `import.topics` set to `true`. This will import at startup all existing topics that don't start with double underscore (`__`). For each one, operator creates a ConfigMap with name that is same as the name of topic (with underscores replaced with dashes), and data content containing true name, number of partitions, replication factor and properties if any has been set. Its annotation `alpha.topic.kafka.nb/generated` is set to the time of importing.
 
 ## TODO
 
-* Prometheus Metrics creation
-* Kafka cluster creation
-* Investigate using watch instead of poll
+* Manage acls

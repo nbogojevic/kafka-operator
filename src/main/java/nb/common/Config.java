@@ -1,12 +1,20 @@
 package nb.common;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class Config {
-  Properties internalProperties = new Properties();
-  
+  private final static Logger log = LoggerFactory.getLogger(Config.class);
+
   private Config() {
   }
 
@@ -49,6 +57,10 @@ public final class Config {
   public static String getSystemPropertyOrEnvVar(String systemPropertyName) {
     return getSystemPropertyOrEnvVar(systemPropertyName, (String) null);
   }
+  
+  public static String kubeAnnotation(String path) {
+    return  "alpha.topic.kafka.nb/" + path;
+  }
 
   public static Boolean getSystemPropertyOrEnvVar(String systemPropertyName, Boolean defaultValue) {
     String result = getSystemPropertyOrEnvVar(systemPropertyName, String.valueOf(defaultValue));
@@ -58,6 +70,11 @@ public final class Config {
   public static int getSystemPropertyOrEnvVar(String systemPropertyName, int defaultValue) {
     String result = getSystemPropertyOrEnvVar(systemPropertyName, String.valueOf(defaultValue));
     return Integer.parseInt(result);
+  }
+
+  public static short getSystemPropertyOrEnvVar(String systemPropertyName, short defaultValue) {
+    String result = getSystemPropertyOrEnvVar(systemPropertyName, String.valueOf(defaultValue));
+    return Short.parseShort(result);
   }
 
   public static String getProperty(Map<String, String> map, String property, String defaultValue) {
@@ -72,20 +89,40 @@ public final class Config {
     return Integer.parseInt(result);
   }
 
+  public static short getProperty(Map<String, String> map, String property, short defaultValue) {
+    String result = getProperty(map, property, String.valueOf(defaultValue));
+    return Short.parseShort(result);
+  }
+
   public static Boolean getProperty(Map<String, String> map, String property, Boolean defaultValue) {
     String result = getProperty(map, property, String.valueOf(defaultValue));
     return Boolean.parseBoolean(result);
   }
 
-  public static Map<String, String> mapFromProperties(Properties props) {
-    Map<String, String> propMap = new HashMap<>();
-    props.forEach((k, v) -> propMap.put((String) k, (String) v));
-    return propMap;
+  public static String propertiesAsString(Map<String, String> map) {
+    try {
+      Properties props = new Properties();
+      props.putAll(map);
+      StringWriter sw = new StringWriter();
+      props.store(sw, null);
+      return sw.toString();
+    } catch (IOException e) {
+      log.error("This exception should not occur.", e);      
+      return "";
+    }
   }
 
-  public static Properties propertiesFromMap(Map<String, String> use) {
+  public static Map<String, String> propertiesFromString(String properties) throws IOException {
     Properties props = new Properties();
-    props.putAll(use);
-    return props;
+    props.load(new StringReader(properties));
+    Map<String, String> map = new HashMap<>();
+    props.forEach((k, v) -> map.put((String) k, (String) v));
+    return map;
   }
+
+  public static Map<String, String> stringToMap(String labels) {
+    return Arrays.asList(labels.split(",")).stream().map(s -> s.split("="))
+        .filter(s -> s.length == 2).collect(Collectors.toMap(s -> s[0], s -> s[1]));
+  }
+
 }

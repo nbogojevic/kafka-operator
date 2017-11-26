@@ -87,3 +87,10 @@ buildNumber.properties
 
 # Exclude kubernetes files
 .kube/
+
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json

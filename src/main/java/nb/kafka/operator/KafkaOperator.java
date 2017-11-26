@@ -1,118 +1,127 @@
 package nb.kafka.operator;
 
 import static java.util.stream.Collectors.toList;
+import static nb.common.App.metrics;
 import static nb.common.Config.getSystemPropertyOrEnvVar;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.MetricRegistry;
+
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import nb.common.App;
+import nb.common.Config;
 
 public class KafkaOperator {
   private final static Logger log = LoggerFactory.getLogger(KafkaOperator.class);
 
+  private final DefaultKubernetesClient kubeClient;
   private final KafkaUtilities kafkaUtils;
-  private final boolean enabledDelete;
-  Set<String> previousExistingTopics;
-
+  private final String operatorId;
+  private final String kafkaUrl;
+  private final TopicManager topicManager;
+  private final AclManager aclManager;
   private final ManagedTopics managedTopics;
 
-  private final ConfigMapManager configMapManager;
+  private KafkaOperator(String operatorId, String kafkaUrl, short defaultReplFactor, Map<String, String> standardLabels, boolean enableAcl, 
+      String usernamePoolSecretName, String consumedUsersSecretName, Map<String, String> standardAclLabels) {
+    this.kafkaUrl = kafkaUrl;
+    this.operatorId = operatorId != null ? operatorId : "kafka-operator";
+    this.kafkaUtils = new KafkaUtilities(kafkaUrl, defaultReplFactor);
+    this.kubeClient = new DefaultKubernetesClient();
+    this.topicManager = new ConfigMapManager(this, standardLabels);
+    this.aclManager = enableAcl ? new AclManager(this, usernamePoolSecretName, consumedUsersSecretName, standardAclLabels) : null;
 
-  public KafkaOperator(KafkaUtilities kafkaUtils, ConfigMapManager configMapManager, boolean enabledDelete) {
-    this.kafkaUtils = kafkaUtils;
-    this.configMapManager = configMapManager;
-    this.enabledDelete = enabledDelete;
-    previousExistingTopics = Collections.emptySet();
     managedTopics = new ManagedTopics();
-    App.registerMBean(managedTopics, "kafka-operator:type=ManagedTopics");
-  }
-
-  public void checkAndApplyChanges() {
-    try {
-      log.debug("Operator wake-up.");
-      LinkedHashSet<String> existingTopics = new LinkedHashSet<>(kafkaUtils.listTopics());
-      List<Topic> requestedTopics = configMapManager.get();
-      // Filter protected topics
-      requestedTopics = requestedTopics.stream().filter(this::notProtected).collect(toList());
-      managedTopics.setManagedTopics(requestedTopics);
-            
-      requestedTopics.stream().filter(t -> !t.isDeleted()).forEach(kafkaUtils::manageTopic);
-      if (enabledDelete) {
-        requestedTopics.stream().filter(Topic::isDeleted).map(Topic::getName).forEach(kafkaUtils::deleteTopic);
+    App.registerMBean(managedTopics, "kafka.operator:type=ManagedTopics");
+    metrics().register(MetricRegistry.name("managed-topics"), new Gauge<Integer>() {
+      @Override
+      public Integer getValue() {
+          return managedTopics.size();
       }
-      filterManagedTopics(existingTopics, requestedTopics);
-      if (!previousExistingTopics.equals(existingTopics)) {
-        log.info("Topic(s) not under operator control: {}", existingTopics);
-      }
-      previousExistingTopics = existingTopics;
-    } catch (Exception e) {
-      log.error("Exception during operator wake-up", e);
-      throw e;
-    }
+    });
+    Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
   }
-
   
-  private boolean notProtected(Topic td) {
-    return notProtected(td.getName());
+  public DefaultKubernetesClient kubeClient() {
+    return kubeClient;
   }
-
-  private boolean notProtected(String topicName) {
-    return !topicName.startsWith("__");
-  }
-
-  public void importTopics() {
-    LinkedHashSet<String> existingTopics = new LinkedHashSet<>(kafkaUtils.listTopics());
-    List<Topic> requestedTopics = configMapManager.get();
+  
+  private void importTopics() {
+    Set<String> existingTopics = kafkaUtils.topics();
+    List<Topic> requestedTopics = topicManager.get();
     filterManagedTopics(existingTopics, requestedTopics);
-    existingTopics.stream().filter(this::notProtected).map(kafkaUtils::topic).forEach(configMapManager::create);    
+    existingTopics.stream().filter(this::notProtected).map(kafkaUtils::topic).forEach(topicManager::createResource);    
   }
 
-  private static void filterManagedTopics(LinkedHashSet<String> existingTopics, List<Topic> requestedTopics) {
+  private static void filterManagedTopics(Set<String> existingTopics, List<Topic> requestedTopics) {
     existingTopics.removeAll(requestedTopics.stream().map(Topic::getName).collect(toList()));
   }
   
-  public void shutdown() {
-    if (configMapManager instanceof Closeable) {
-      try {
-        ((Closeable) configMapManager).close();
-      } catch (IOException e) {
-        log.error("Exception while closing topic supplier.", e);
-      }
+  private void shutdown() {
+    topicManager.close();
+    if (aclManager != null) {
+      aclManager.close();
+    }
+    kubeClient.close();
+  }
+  
+  public static void main(String[] args) throws InstantiationException, IllegalAccessException, ClassNotFoundException, InterruptedException {
+    App.start("kafka.operator");
+    String kafkaUrl = getSystemPropertyOrEnvVar("bootstrap.server", "kafka:9092");
+    String operatorId = getSystemPropertyOrEnvVar("operator.id", "kafka-operator");
+    short defaultReplFactor = getSystemPropertyOrEnvVar("default.replication.factor", (short) 2);
+    boolean importTopics = getSystemPropertyOrEnvVar("import.topics", true);
+    boolean enableAcl = getSystemPropertyOrEnvVar("enable.acl", false);
+    Map<String, String> standardLabels = Config.stringToMap(getSystemPropertyOrEnvVar("standard.labels", ""));
+    Map<String, String> aclLabels = Config.stringToMap(getSystemPropertyOrEnvVar("standard.acl.labels", ""));
+    String usernamePoolSecret = getSystemPropertyOrEnvVar("username.pool.secret", "kafka-cluster-kafka-auth-pool");
+    String consumedUserSecret = getSystemPropertyOrEnvVar("consumed.usernames.secret", "kafka-cluster-kafka-consumed-auth-pool");
+    KafkaOperator operator = new KafkaOperator(operatorId, kafkaUrl, defaultReplFactor, standardLabels, enableAcl, usernamePoolSecret, consumedUserSecret, aclLabels);
+    if (importTopics) {
+      log.debug("Importing topics from cluster {}.", kafkaUrl);
+      operator.importTopics();
+    }
+    operator.watch();
+    log.info("Operator {} started: Managing cluster {}.", operatorId, kafkaUrl);
+  }
+
+  private void watch() {
+    topicManager.watch();
+    if (aclManager != null) {
+      aclManager.watch();
     }
   }
 
-  public static void main(String[] args) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-    App.start("kafka-operator");
-    String kafkaUrl = getSystemPropertyOrEnvVar("zookeeper.bootstrap", "zookeeper:2181");
-    int defaultReplFactor = getSystemPropertyOrEnvVar("default.repl.factor", 2);
-    int refreshInterval = getSystemPropertyOrEnvVar("refresh.interval", 60);
-    boolean enableDelete = getSystemPropertyOrEnvVar("enable.topic.delete", false);
-    boolean importTopics = getSystemPropertyOrEnvVar("import.topics", false);
-    
-    KafkaOperator operator = new KafkaOperator(new KafkaUtilities(kafkaUrl, defaultReplFactor), new ConfigMapManager(), enableDelete);
-    
-    if (importTopics) {
-      operator.importTopics();
-    }
-    log.info("Starting operator. Wake-up every {} second(s).", refreshInterval);  
-    ScheduledThreadPoolExecutor operatorExecutor = new ScheduledThreadPoolExecutor(1) {
-      protected void afterExecute(Runnable r, Throwable t) {
-        if (t != null) {
-          log.error("Exception occured during wake-up execution.", t);
-        }
-      }
-    };
-    Runtime.getRuntime().addShutdownHook(new Thread(operator::shutdown));
-    operatorExecutor.scheduleWithFixedDelay(operator::checkAndApplyChanges, 0, refreshInterval, TimeUnit.SECONDS);
+  public boolean notProtected(String topicName) {
+    return !topicName.startsWith("__");
+  }
+
+  public void manageTopic(Topic topic) {
+    managedTopics.add(topic);
+    kafkaUtils.manageTopic(topic); 
+  }
+
+  public void deleteTopic(String topicName) {
+    managedTopics.delete(topicName);
+    kafkaUtils.deleteTopic(topicName); 
+  }
+
+  public String getBootstrapServer() {
+    return kafkaUrl;
+  }
+
+  public String getGeneratorId() {
+    return operatorId;
+  }
+
+  public KafkaUtilities kafkaUtils() {
+    return kafkaUtils;
   }
 }

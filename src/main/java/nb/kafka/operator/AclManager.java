@@ -12,6 +12,7 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -22,6 +23,7 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Initializer;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -41,11 +43,13 @@ public class AclManager implements Closeable {
   private String usernamePoolSecretName;
   private String consumedUsersSecretName;
   private final KafkaOperator operator;
+  private final boolean useInitializers;
   private int userPoolAvailable;
   private Watch watch;
 
   public AclManager(KafkaOperator operator, String usernamePoolSecretName, String consumedUsersSecretName, Map<String, String> map) {
     super();
+    this.useInitializers = false;
     this.operator = operator;
     this.userPoolAvailable = 100;
     this.usernamePoolSecretName = usernamePoolSecretName;
@@ -83,7 +87,16 @@ public class AclManager implements Closeable {
   }
 
   public void onNeedSecret(HasMetadata deployment) {
-    log.info("Initializers pending: {}", deployment.getMetadata().getInitializers());
+    if (useInitializers) {
+      if (deployment.getMetadata().getInitializers() == null) {
+        return;
+      }
+      List<Initializer> pending = deployment.getMetadata().getInitializers().getPending();
+      if (pending == null || pending.isEmpty() || !"kafka-operator".equals(pending.get(0).getName())) {
+        return;
+      }
+      log.info("Initializing deployment: {}", deployment.getMetadata().getName());        
+    }
     Collection<String> consumedTopics = asList(deployment, CONSUMES_TOPICS_ANNOTATION);
     Collection<String> producedTopics = asList(deployment, PRODUCES_TOPICS_ANNOTATION);
     String secretName = deployment.getMetadata().getAnnotations().get(TOPIC_SECRET_NAME);
@@ -92,7 +105,7 @@ public class AclManager implements Closeable {
     }
     Secret exists = kubeClient().secrets().withName(secretName).get();
     if (exists != null) {
-      log.info("Secret with kafka credentials already exists for {}", deployment.getMetadata().getName());
+      log.debug("Secret with kafka credentials already exists for {}", deployment.getMetadata().getName());
       return;
     }
     Map.Entry<String, String> assignedUser = allocateUser(deployment);
@@ -118,6 +131,16 @@ public class AclManager implements Closeable {
     // Should we make it owned by all topics too?
     setOwnership(topicSecret, deployment);
     kubeClient().secrets().create(topicSecret);
+    if (useInitializers) {
+      List<Initializer> pending = new ArrayList<>(deployment.getMetadata().getInitializers().getPending());
+      pending.remove(0);
+      deployment.getMetadata().getInitializers().setPending(pending);
+      update(deployment);
+    }
+  }
+
+  protected void update(HasMetadata deployment) {
+    kubeClient().extensions().deployments().createOrReplace((Deployment) deployment);      
   }
 
   private String jaasConf(String username, String password) {
@@ -125,7 +148,7 @@ public class AclManager implements Closeable {
     sb.append("KafkaClient {\n")
       .append(" org.apache.kafka.common.security.plain.PlainLoginModule required\n")
       .append(" username=").append(username).append('\n')
-      .append(" password=").append(password).append('\n')
+      .append(" password=").append(password).append(";\n")
       .append("};");
     return sb.toString();
   }

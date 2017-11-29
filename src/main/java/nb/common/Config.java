@@ -59,7 +59,7 @@ public final class Config {
   }
   
   public static String kubeAnnotation(String path) {
-    return  "alpha.topic.kafka.nb/" + path;
+    return  "topic.kafka.nb/" + path;
   }
 
   public static Boolean getSystemPropertyOrEnvVar(String systemPropertyName, Boolean defaultValue) {

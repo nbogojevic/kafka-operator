@@ -39,8 +39,9 @@ IMPORT_TOPICS        | import.topics | I	f set to true existing topics in kafka 
 STANDARD_LABELS      | standard.labels| Comma-separated list of labels that must be set on ConfigMap that are taken into account| empty list
 ENABLE_ACL           | enable.acl | If set to true activates acl managment | false
 STANDARD_ACL_LABELS  | standard.acl.labels| Comma-separated list of labels that must be set on deployments that are taken into account| empty list
-USERNAME_POOL_SECRET  | username.pool.secret| Name of the secret containing pool of available usernames | kafka-cluster-kafka-auth-pool
+USERNAME_POOL_SECRET | username.pool.secret| Name of the secret containing pool of available usernames | kafka-cluster-kafka-auth-pool
 CONSUMED_USERNAMES_SECRET | consumed.usernames.secret| Name of the secret containing list of already used usernames | kafka-cluster-kafka-consumed-auth-pool
+SECURITY_PROTOCOL    | security.protocol | Security protocol to use SASL_SSL or SASL_PLAINTEXT. | empty
 OPERATOR_ID          | operator.id| Unique id of the operator in a namespace | kafka-operator
 LOG_LEVEL            | LOG_LEVEL | Set log level (debug|info|warn|error) | info
 
@@ -56,10 +57,10 @@ metadata:
   labels:
     config: kafka-topic  
 data:
-   partitions: 20
-   replication-factor: 3
-   properties: |
-     retention.ms=1000000
+  partitions: "20"
+  replication-factor: "3"
+  properties: |
+    retention.ms=1000000
 ```
 
 Note that the name of file is not important. Once the file has been created, create the resource. For example, in openshift, do:
@@ -78,11 +79,11 @@ metadata:
   labels:
     config: kafka-topic  
 data:
-   name: Underscore_Kafka_Topic
-   partitions: 20
-   replication-factor: 3
-   properties: |
-     retention.ms=1000000
+  name: Underscore_Kafka_Topic
+  partitions: "20"
+  replication-factor: "3"
+  properties: |
+    retention.ms=1000000
 ```
 
 Kafka operator only manages topics that are defined in ConfigMaps. If a ConfigMap for a topic is deleted, the operator will delete it and no longer manage it. On the other hand, if a new ConfigMap is created for an already existing topic, the operator will start managing it.
@@ -108,11 +109,11 @@ metadata:
   labels:
     config: kafka-topic  
 data:
-   partitions: 20
-   replication-factor: 3
-   properties: |
-     retention.ms=1000000
-     compression.type=producer
+  partitions: "20"
+  replication-factor: "3"
+  properties: |
+    retention.ms=1000000
+    compression.type=producer
 ```
 
 
@@ -127,8 +128,33 @@ To delete existing kafka topic managed by operator, just delete its ConfigMap.
 
 ### Importing existing kafka topics
 
-The operator can import existing kafka topics from brokers and start managing them. This is done by starting operator with environment variable `IMPORT_TOPICS` or system property `import.topics` set to `true`. This will import at startup all existing topics that don't start with double underscore (`__`). For each one, operator creates a ConfigMap with name that is same as the name of topic (with underscores replaced with dashes), and data content containing true name, number of partitions, replication factor and properties if any has been set. Its annotation `alpha.topic.kafka.nb/generated` is set to the time of importing.
+The operator can import existing kafka topics from brokers and start managing them. This is done by starting operator with environment variable `IMPORT_TOPICS` or system property `import.topics` set to `true`. This will import at startup all existing topics that don't start with double underscore (`__`). For each one, operator creates a ConfigMap with name that is same as the name of topic (with underscores replaced with dashes), and data content containing true name, number of partitions, replication factor and properties if any has been set. Its annotation `topic.kafka.nb/generated` is set to the time of importing.
 
-## TODO
+## Managing ACLs
 
-* Manage acls
+Operator can watch for Deployments or DeploymentConfigs that have label `kafka-operator` set to `inject-credentials`. It will read following
+annotations and create secret if needed.
+* `topic.kafka.nb/consumes-topics` is the comma-separated list of topics that are consumed by Deployment. Those topics will be readable by user
+assigned to Deployment.
+* `topic.kafka.nb/produces-topics` is the comma-separated list of topics that are produced by Deployment. Those topics will be writeable by user
+assigned to Deployment.
+* `topic.kafka.nb/topic-secret` is the name of secret that is used by Deployment. The secret will be generated if not present and will contain
+an allocated user, password, JAAS configuration file and UR to kafka bootstrap server. 
+
+```yaml
+bootstrap.server: "kafka:9092" 
+kafka-client-jaas.conf: |
+  KafkaClient {
+   org.apache.kafka.common.security.plain.PlainLoginModule required
+   username=EG8m6ceyaONFJMg0
+   password=5vdmIFGZ4sMoeElU;
+ };
+username: "EG8m6ceyaONFJMg0"
+password: "5vdmIFGZ4sMoeElU" 
+```
+
+TODO: Explain using initializers
+
+## Authentication
+
+Kafka operator can use SASL_PLAINTEXT to authenticate itself when connecting to kafka cluster. See kafka documentation for details on how to provide credentials.

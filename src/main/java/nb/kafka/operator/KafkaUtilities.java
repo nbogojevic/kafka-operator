@@ -38,6 +38,7 @@ import org.apache.kafka.common.acl.AclBindingFilter;
 import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.acl.AclPermissionType;
 import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.errors.SecurityDisabledException;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
@@ -64,7 +65,7 @@ public class KafkaUtilities {
 
   private AdminClient adminClient;
 
-  public KafkaUtilities(String kafkaUrl, short defaultReplFactor) {
+  public KafkaUtilities(String kafkaUrl, String securityProtocol, short defaultReplFactor) {
     this.defaultReplFactor = defaultReplFactor;
     createdTopics = metrics().counter(MetricRegistry.name("created-topics"));
     changedTopics = metrics().counter(MetricRegistry.name("changed-topics"));
@@ -72,6 +73,12 @@ public class KafkaUtilities {
 
     Properties conf = new Properties();
     conf.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl);
+    if (securityProtocol != null && !securityProtocol.trim().isEmpty()) {
+      log.info("Using security protocol {}.", securityProtocol);      
+      conf.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, securityProtocol);
+      conf.setProperty(SaslConfigs.SASL_MECHANISM, "PLAIN");
+      
+    }
     adminClient = AdminClient.create(conf);
     topics();
   }

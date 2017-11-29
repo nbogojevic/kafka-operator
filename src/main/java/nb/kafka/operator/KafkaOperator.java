@@ -29,11 +29,11 @@ public class KafkaOperator {
   private final AclManager aclManager;
   private final ManagedTopics managedTopics;
 
-  private KafkaOperator(String operatorId, String kafkaUrl, short defaultReplFactor, Map<String, String> standardLabels, boolean enableAcl, 
+  private KafkaOperator(String operatorId, String kafkaUrl, String securityProtocol, short defaultReplFactor, Map<String, String> standardLabels, boolean enableAcl, 
       String usernamePoolSecretName, String consumedUsersSecretName, Map<String, String> standardAclLabels) {
     this.kafkaUrl = kafkaUrl;
     this.operatorId = operatorId != null ? operatorId : "kafka-operator";
-    this.kafkaUtils = new KafkaUtilities(kafkaUrl, defaultReplFactor);
+    this.kafkaUtils = new KafkaUtilities(kafkaUrl, securityProtocol, defaultReplFactor);
     this.kubeClient = new DefaultKubernetesClient();
     this.topicManager = new ConfigMapManager(this, standardLabels);
     this.aclManager = enableAcl ? new AclManager(this, usernamePoolSecretName, consumedUsersSecretName, standardAclLabels) : null;
@@ -79,11 +79,16 @@ public class KafkaOperator {
     short defaultReplFactor = getSystemPropertyOrEnvVar("default.replication.factor", (short) 2);
     boolean importTopics = getSystemPropertyOrEnvVar("import.topics", true);
     boolean enableAcl = getSystemPropertyOrEnvVar("enable.acl", false);
+    String securityProtocol = getSystemPropertyOrEnvVar("security.protocol", "");
+    if (enableAcl && (securityProtocol == null || securityProtocol.trim().isEmpty())) {
+      securityProtocol = "SASL_PLAINTEXT";
+      log.warn("ACL was enabled, but not security.protocol, forcing security protocol to {}", securityProtocol);
+    }
     Map<String, String> standardLabels = Config.stringToMap(getSystemPropertyOrEnvVar("standard.labels", ""));
     Map<String, String> aclLabels = Config.stringToMap(getSystemPropertyOrEnvVar("standard.acl.labels", ""));
     String usernamePoolSecret = getSystemPropertyOrEnvVar("username.pool.secret", "kafka-cluster-kafka-auth-pool");
     String consumedUserSecret = getSystemPropertyOrEnvVar("consumed.usernames.secret", "kafka-cluster-kafka-consumed-auth-pool");
-    KafkaOperator operator = new KafkaOperator(operatorId, kafkaUrl, defaultReplFactor, standardLabels, enableAcl, usernamePoolSecret, consumedUserSecret, aclLabels);
+    KafkaOperator operator = new KafkaOperator(operatorId, kafkaUrl, securityProtocol, defaultReplFactor, standardLabels, enableAcl, usernamePoolSecret, consumedUserSecret, aclLabels);
     if (importTopics) {
       log.debug("Importing topics from cluster {}.", kafkaUrl);
       operator.importTopics();

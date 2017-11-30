@@ -158,3 +158,4 @@ TODO: Explain using initializers
 ## Authentication
 
 Kafka operator can use SASL_PLAINTEXT to authenticate itself when connecting to kafka cluster. See kafka documentation for details on how to provide credentials.
+When using ACL management, the operator will by default activate authentication.

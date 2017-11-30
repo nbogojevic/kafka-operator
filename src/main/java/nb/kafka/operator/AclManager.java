@@ -36,8 +36,8 @@ import io.fabric8.kubernetes.client.Watcher;
 import nb.common.Config;
 
 public class AclManager implements Closeable {
-  private static final String CONSUMES_TOPICS_ANNOTATION = Config.kubeAnnotation("consumes-topics");
-  private static final String PRODUCES_TOPICS_ANNOTATION = Config.kubeAnnotation("produces-topics");
+  private static final String CONSUMES_TOPICS_ANNOTATION = Config.kubeAnnotation("consumes");
+  private static final String PRODUCES_TOPICS_ANNOTATION = Config.kubeAnnotation("produces");
   private static final Object TOPIC_SECRET_NAME = Config.kubeAnnotation("topic-secret");
   private final static Logger log = LoggerFactory.getLogger(AclManager.class);
   private String usernamePoolSecretName;

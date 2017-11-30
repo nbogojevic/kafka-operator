@@ -182,6 +182,7 @@ public class AclManager implements Closeable {
   }
 
   private Collection<String> decodeList(String string) {
+    string = new String(Base64.getDecoder().decode(string), StandardCharsets.UTF_8);
     return Arrays.asList(string.split("\n")).stream().filter(s -> !s.trim().isEmpty()).collect(Collectors.toCollection(ArrayList::new));
   }
 

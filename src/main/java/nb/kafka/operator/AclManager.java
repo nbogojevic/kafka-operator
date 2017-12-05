@@ -109,6 +109,7 @@ public class AclManager implements Closeable {
       return;
     }
     Map.Entry<String, String> assignedUser = allocateUser(deployment);
+    log.info("Allocating user {} to {} {}", assignedUser.getKey(), deployment.getKind(), deployment.getMetadata().getName());
     operator.kafkaUtils().setUpAclForUser(assignedUser.getKey(), consumedTopics, producedTopics);
     Map<String, String> secretMap = new HashMap<>();
     secretMap.put("username", assignedUser.getKey());
@@ -130,6 +131,7 @@ public class AclManager implements Closeable {
       .build();
     // Should we make it owned by all topics too?
     setOwnership(topicSecret, deployment);
+    log.info("Creating secret {} for Deployment {}", secretName, deployment.getMetadata().getName());
     kubeClient().secrets().create(topicSecret);
     if (useInitializers) {
       List<Initializer> pending = new ArrayList<>(deployment.getMetadata().getInitializers().getPending());
@@ -147,8 +149,8 @@ public class AclManager implements Closeable {
     StringBuilder sb = new StringBuilder();
     sb.append("KafkaClient {\n")
       .append(" org.apache.kafka.common.security.plain.PlainLoginModule required\n")
-      .append(" username=").append(username).append('\n')
-      .append(" password=").append(password).append(";\n")
+      .append(" username=\"").append(username).append("\"\n")
+      .append(" password=\"").append(password).append("\";\n")
       .append("};");
     return sb.toString();
   }
@@ -217,8 +219,9 @@ public class AclManager implements Closeable {
   public void onRemoved(HasMetadata deployment) {
     String secretName = deployment.getMetadata().getAnnotations().get(TOPIC_SECRET_NAME);
     if (secretName == null) {      
-      secretName = deployment.getMetadata().getName()+"-kafka-credentials";
+      secretName = deployment.getMetadata().getName() + "-kafka-credentials";
     }
+    log.info("Deleting secret {} for Deployment {}", secretName, deployment.getMetadata().getName());
     kubeClient().secrets().withName(secretName).delete();
   }
   
@@ -226,7 +229,7 @@ public class AclManager implements Closeable {
     @Override
     public void eventReceived(Action action, Deployment resource) {
       if (resource != null) {
-        log.info("Got event {} for {} {}", action, resourceKind(), resource.getMetadata().getName());
+        log.debug("Got event {} for {} {}", action, resourceKind(), resource.getMetadata().getName());
         switch (action) {
           case ADDED:
           case MODIFIED:

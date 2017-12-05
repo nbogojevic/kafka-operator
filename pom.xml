@@ -16,6 +16,7 @@
 		<version.fabric8.k8s.client>3.0.1</version.fabric8.k8s.client>
 		<version.fabric8.openshift.client>3.0.3</version.fabric8.openshift.client>
 		<version.prometheus.exproter>0.1.0</version.prometheus.exproter>
+		<fabric8.mode>kubernetes</fabric8.mode>
 	</properties>
 
 	<build>

@@ -65,7 +65,6 @@ public class KafkaUtilities {
 
   private AdminClient adminClient;
 
-  //check time out 
 
   public KafkaUtilities(String kafkaUrl, String securityProtocol, short defaultReplFactor) {
     this.defaultReplFactor = defaultReplFactor;
@@ -84,19 +83,27 @@ public class KafkaUtilities {
     adminClient = AdminClient.create(conf);
     topics();
   }
-  
+
   public Set<String> topics() {
+    
     KafkaFuture<Set<String>> names = adminClient.listTopics().names();
-    try {
-      KafkaFuture.allOf(names).get(10, TimeUnit.SECONDS);
-      Set<String> topics = names.get();
-      log.debug("Got topics: {}", topics);
-      return topics;
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-      throw new IllegalStateException("Exception occured during topic retrieval.", e);
+    int count = 0;
+    int maxTries = 5;
+    while(true) {
+      try {
+          KafkaFuture.allOf(names).get(10, TimeUnit.SECONDS);
+          Set<String> topics = names.get();
+          log.debug("Got topics: {}", topics);
+        return topics;
+
+      } catch (InterruptedException | ExecutionException | TimeoutException e) {
+          if (++count == maxTries)  
+            throw new IllegalStateException("Exception occured during topic retrieval.", e);;
+      }
     }
   }
-  
+
+
   public void deleteTopic(String name) {
     if (topics().contains(name)) {
       log.warn("Deleting topic. name: {}", name);

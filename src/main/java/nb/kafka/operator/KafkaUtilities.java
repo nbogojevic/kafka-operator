@@ -90,15 +90,16 @@ public class KafkaUtilities {
     int maxTries = 10;
     while(true) {
       try {
-          KafkaFuture.allOf(names).get(30, TimeUnit.SECONDS);
-          Set<String> topics = names.get();
-          log.debug("Got topics: {}", topics);
+        KafkaFuture.allOf(names).get(30, TimeUnit.SECONDS);
+        Set<String> topics = names.get();
+        log.debug("Got topics: {}", topics);
         return topics;
       } catch (InterruptedException | ExecutionException | TimeoutException e) {
-          if (++count == maxTries)  
-            throw new IllegalStateException("Exception occured during topic retrieval.", e);
-          else
-            log.info("FAILED - RETRYING: Wait for topic to become available ("+count+ " retries left)");
+        if (++count == maxTries) {
+          throw new IllegalStateException("Exception occured during topic retrieval.", e);
+        } else {
+          log.info("Failed - retrying: Wait for topic to become available (retry {} of {})", count, maxTries);
+        }
       }
     }
   }

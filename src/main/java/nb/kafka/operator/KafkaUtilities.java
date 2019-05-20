@@ -65,6 +65,7 @@ public class KafkaUtilities {
 
   private AdminClient adminClient;
 
+
   public KafkaUtilities(String kafkaUrl, String securityProtocol, short defaultReplFactor) {
     this.defaultReplFactor = defaultReplFactor;
     createdTopics = metrics().counter(MetricRegistry.name("created-topics"));
@@ -86,21 +87,22 @@ public class KafkaUtilities {
   public Set<String> topics() {
     KafkaFuture<Set<String>> names = adminClient.listTopics().names();
     int count = 0;
-    int maxTries = 5;
+    int maxTries = 10;
     while(true) {
       try {
-        KafkaFuture.allOf(names).get(10, TimeUnit.SECONDS);
-        Set<String> topics = names.get();
-        log.debug("Got topics: {}", topics);
+          KafkaFuture.allOf(names).get(30, TimeUnit.SECONDS);
+          Set<String> topics = names.get();
+          log.debug("Got topics: {}", topics);
         return topics;
       } catch (InterruptedException | ExecutionException | TimeoutException e) {
-        if (++count == maxTries) {
-          throw new IllegalStateException("Exception occured during topic retrieval.", e);;
-        }
+          if (++count == maxTries)  
+            throw new IllegalStateException("Exception occured during topic retrieval.", e);
+          else
+            log.info("FAILED - RETRYING: Wait for topic to become available ("+count+ " retries left)");
       }
     }
   }
-
+  
   public void deleteTopic(String name) {
     if (topics().contains(name)) {
       log.warn("Deleting topic. name: {}", name);

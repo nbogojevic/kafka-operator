@@ -65,7 +65,6 @@ public class KafkaUtilities {
 
   private AdminClient adminClient;
 
-
   public KafkaUtilities(String kafkaUrl, String securityProtocol, short defaultReplFactor) {
     this.defaultReplFactor = defaultReplFactor;
     createdTopics = metrics().counter(MetricRegistry.name("created-topics"));
@@ -77,8 +76,7 @@ public class KafkaUtilities {
     if (securityProtocol != null && !securityProtocol.trim().isEmpty()) {
       log.info("Using security protocol {}.", securityProtocol);      
       conf.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, securityProtocol);
-      conf.setProperty(SaslConfigs.SASL_MECHANISM, "PLAIN");
-      
+      conf.setProperty(SaslConfigs.SASL_MECHANISM, "PLAIN"); 
     }
     adminClient = AdminClient.create(conf);
     topics();

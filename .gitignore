@@ -73,6 +73,7 @@ local.properties
 .recommenders/
 
 target/
+kafka-operator.iml
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup

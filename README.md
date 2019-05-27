@@ -9,6 +9,14 @@ about kafka topic to create/update. This check is by watching all changes to Con
 
 ## How to use kafka operator
 
+To be able to run the operator, you first need to get the needed kubernetes/openshift resources. It is enough to build the project using the Maven profile `fabric8` which uses fabric8 pulgin to generate these resources:
+
+```bash
+mvn clean install -Pfabric8
+```
+
+The manifests `kubernetes.yml` and `openshift.yml` should be localted in `target/classes/META-INF/fabric8/`
+
 Start kafka operator within a project. The simplest way to do it in Kubernetes is as follows:
 
 ```bash

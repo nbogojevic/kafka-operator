@@ -65,6 +65,10 @@ public class KafkaUtilities {
 
   private AdminClient adminClient;
 
+  final int maxTries = 10;
+
+  int count;
+
   public KafkaUtilities(String kafkaUrl, String securityProtocol, short defaultReplFactor) {
     this.defaultReplFactor = defaultReplFactor;
     createdTopics = metrics().counter(MetricRegistry.name("created-topics"));
@@ -84,8 +88,7 @@ public class KafkaUtilities {
 
   public Set<String> topics() {
     KafkaFuture<Set<String>> names = adminClient.listTopics().names();
-    int count = 0;
-    int maxTries = 10;
+    count = 0;
     while(true) {
       try {
         KafkaFuture.allOf(names).get(30, TimeUnit.SECONDS);
@@ -228,16 +231,22 @@ public class KafkaUtilities {
   }
 
   TopicDescription topicDescription(String topicName) {
+    count = 0;
     DescribeTopicsResult dt = adminClient.describeTopics(singleton(topicName));
-    try {
-      dt.all().get();
-      TopicDescription topicDescription = dt.values().get(topicName).get();
-      return topicDescription;
-    } catch (InterruptedException | ExecutionException  e) {
-      if (e.getCause() != null && e.getCause() instanceof UnknownTopicOrPartitionException) {
-        return null;
+    while(true){
+      try {
+        dt.all().get();
+        TopicDescription topicDescription = dt.values().get(topicName).get();
+        return topicDescription;
+      } catch (InterruptedException | ExecutionException  e) {
+        if(++count == maxTries){
+          if (e.getCause() != null && e.getCause() instanceof UnknownTopicOrPartitionException) {
+            return null;
+          }
+          throw new IllegalStateException("Exception occured during topic details retrieval. name: " + topicName, e);
+        }else
+          log.info("Failed - retrying: Wait for topic to become available (retry {} of {})", count, maxTries);
       }
-      throw new IllegalStateException("Exception occured during topic details retrieval. name: " + topicName, e);
     }
   }
 

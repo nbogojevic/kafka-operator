@@ -245,7 +245,7 @@ public class KafkaUtilities {
           }
           throw new IllegalStateException("Exception occured during topic details retrieval. name: " + topicName, e);
         }else
-          log.info("Failed - retrying: Wait for topic to become available (retry {} of {})", count, maxTries);
+          log.info("Failed - retrying: Wait for topic details to become available (retry {} of {})", count, maxTries);
       }
     }
   }

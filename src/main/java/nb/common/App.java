@@ -16,10 +16,10 @@ import com.codahale.metrics.MetricRegistry;
 
 public final class App {
 
-  private final static Logger log = LoggerFactory.getLogger(App.class);
+  private static final Logger log = LoggerFactory.getLogger(App.class);
 
   private static final MetricRegistry metrics;
-  
+
   private App() {
   }
 

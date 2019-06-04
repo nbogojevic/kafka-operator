@@ -1,6 +1,4 @@
-package nb.kafka.operator;
-
-import static nb.common.Config.kubeAnnotation;
+package nb.kafka.operator.legacy;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -14,11 +12,17 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
+import nb.kafka.operator.KafkaOperator;
+import nb.kafka.operator.Topic;
+import nb.kafka.operator.util.PropertyUtil;
+import nb.kafka.operator.util.TopicUtil;
 
-public abstract class AbstractKubernetesBasedManager<T extends HasMetadata> implements TopicManager, Watcher<T> {
-  private final static Logger log = LoggerFactory.getLogger(AbstractKubernetesBasedManager.class);
+@Deprecated
+public abstract class AbstractKubernetesBasedManager<T extends HasMetadata>
+    implements TopicResourceManager, Watcher<T> {
+  private static final Logger log = LoggerFactory.getLogger(AbstractKubernetesBasedManager.class);
 
-  public static final String GENERATED_ANNOTATION = kubeAnnotation("generated");
+  public static final String GENERATED_ANNOTATION = PropertyUtil.kubeAnnotation("generated");
   public static final String GENERATOR_LABEL = "generator";
   public static final String KAFKA_OPERATOR_GENERATOR = "kafka-operator";
 
@@ -40,12 +44,11 @@ public abstract class AbstractKubernetesBasedManager<T extends HasMetadata> impl
       watch.close();
     }
   }
-  
+
   protected Map<String, String> labels() {
-    Map<String, String> labels = new HashMap<>(identifyingLabels);
-    return labels;
+    return new HashMap<>(identifyingLabels);
   }
-  
+
   protected String cleanName(String name) {
     return name.replace('_', '-').toLowerCase();
   }
@@ -53,7 +56,7 @@ public abstract class AbstractKubernetesBasedManager<T extends HasMetadata> impl
   protected DefaultKubernetesClient kubeClient() {
     return operator.kubeClient();
   }
-  
+
   protected abstract Topic topicBuilder(T resource);
 
   @Override
@@ -61,20 +64,21 @@ public abstract class AbstractKubernetesBasedManager<T extends HasMetadata> impl
     if (cause != null) {
       log.error("Exception while closing {} watch", resourceKind(), cause);
     } else {
-      log.info("Closed {} watch", resourceKind(), cause);
+      log.info("Closed {} watch", resourceKind());
     }
   }
-
 
   @Override
   public void eventReceived(Action action, T resource) {
     if (resource != null) {
       log.info("Got event {} for {} {}", action, resourceKind(), resource.getMetadata().getName());
-      if (operator.notProtected(resource.getMetadata().getName())) {
+      if (TopicUtil.isValidTopicName(resource.getMetadata().getName())) {
         switch (action) {
           case ADDED:
+            operator.createTopic(topicBuilder(resource));
+            break;
           case MODIFIED:
-            operator.manageTopic(topicBuilder(resource));
+            operator.updateTopic(topicBuilder(resource));
             break;
           case DELETED:
             operator.deleteTopic(topicBuilder(resource).getName());
@@ -84,7 +88,8 @@ public abstract class AbstractKubernetesBasedManager<T extends HasMetadata> impl
             break;
         }
       } else {
-        log.warn("{} change {} for protected topic {} was ignored", resourceKind(), action, resource.getMetadata().getName());
+        String topicName = resource.getMetadata().getName();
+        log.warn("{} change {} for protected topic {} was ignored", resourceKind(), action, topicName);
       }
     } else {
       log.warn("Event {} received for null {}", action, resourceKind());

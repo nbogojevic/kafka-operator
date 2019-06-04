@@ -33,19 +33,19 @@ public class AppConfig {
   public void setDefaultReplicationFactor(short defaultReplicationFactor) {
     this.defaultReplicationFactor = defaultReplicationFactor;
   }
-  public boolean isEnableTopicDelete() {
+  public boolean isEnabledTopicDelete() {
     return enableTopicDelete;
   }
   public void setEnableTopicDelete(boolean enableTopicDelete) {
     this.enableTopicDelete = enableTopicDelete;
   }
-  public boolean isEnableTopicImport() {
+  public boolean isEnabledTopicImport() {
     return enableTopicImport;
   }
   public void setEnableTopicImport(boolean enableTopicImport) {
     this.enableTopicImport = enableTopicImport;
   }
-  public boolean isEnableAclManagement() {
+  public boolean isEnabledAclManagement() {
     return enableAclManagement;
   }
   public void setEnableAclManagement(boolean enableAclManagement) {

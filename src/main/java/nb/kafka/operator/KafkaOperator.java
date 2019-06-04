@@ -40,7 +40,7 @@ public class KafkaOperator {
     AppConfig config = loadConfig();
 
     KafkaOperator operator = new KafkaOperator(config);
-    if (config.isEnableTopicImport()) {
+    if (config.isEnabledTopicImport()) {
       log.debug("Importing topics");
       operator.topicImporter.importTopics();
     }
@@ -58,7 +58,7 @@ public class KafkaOperator {
     config.setEnableTopicImport(getSystemPropertyOrEnvVar("import.topics", true));
     config.setEnableAclManagement(getSystemPropertyOrEnvVar("enable.acl", false));
     config.setSecurityProtocol(getSystemPropertyOrEnvVar("security.protocol", ""));
-    if (config.isEnableAclManagement() && isBlank(config.getSecurityProtocol())) {
+    if (config.isEnabledAclManagement() && isBlank(config.getSecurityProtocol())) {
       config.setSecurityProtocol("SASL_PLAINTEXT");
       log.warn("ACL was enabled, but not security.protocol, forcing security protocol to {}",
           config.getSecurityProtocol());
@@ -80,7 +80,7 @@ public class KafkaOperator {
 
     topicManager = new TopicManager(new KafkaAdminImpl(config.getKafkaUrl(), config.getSecurityProtocol()),
             config);
-    aclManager = config.isEnableAclManagement() ? new AclManager(kubeClient, config) : null;
+    aclManager = config.isEnabledAclManagement() ? new AclManager(kubeClient, config) : null;
 
     ConfigMapWatcher cmTopicWatcher = new ConfigMapWatcher(kubeClient, config);
     cmTopicWatcher.setOnCreateListener(this::createTopic);

@@ -48,7 +48,7 @@ public class KafkaOperator {
     log.info("Operator {} started: Managing cluster {}", config.getOperatorId(), config.getKafkaUrl());
   }
 
-  private static AppConfig loadConfig() {
+  public static AppConfig loadConfig() {
     AppConfig config = new AppConfig();
 
     config.setKafkaUrl(getSystemPropertyOrEnvVar("bootstrap.server", "kafka:9092"));
@@ -74,21 +74,20 @@ public class KafkaOperator {
     return config;
   }
 
-
   public KafkaOperator(AppConfig config) {
     kubeClient = new DefaultKubernetesClient();
 
-    topicManager = new TopicManager(new KafkaAdminImpl(config.getKafkaUrl(), config.getSecurityProtocol()),
-            config);
+    KafkaAdmin ka = new KafkaAdminImpl(config.getKafkaUrl(), config.getSecurityProtocol());
+    topicManager = new TopicManager(ka, config);
     aclManager = config.isEnabledAclManagement() ? new AclManager(kubeClient, config) : null;
 
     ConfigMapWatcher cmTopicWatcher = new ConfigMapWatcher(kubeClient, config);
     cmTopicWatcher.setOnCreateListener(this::createTopic);
     cmTopicWatcher.setOnUpdateListener(this::updateTopic);
     cmTopicWatcher.setOnDeleteListener(this::deleteTopic);
-    this.topicWatcher = cmTopicWatcher;
+    topicWatcher = cmTopicWatcher;
 
-   topicImporter = new ConfigMapImporter(kubeClient, cmTopicWatcher, topicManager, config);
+    topicImporter = new ConfigMapImporter(kubeClient, cmTopicWatcher, topicManager, config);
     managedTopics = new ManagedTopics();
     App.registerMBean(managedTopics, "kafka.operator:type=ManagedTopics");
     metrics().register(MetricRegistry.name("managed-topics"), new Gauge<Integer>() {

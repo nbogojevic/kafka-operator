@@ -15,6 +15,10 @@ import nb.kafka.operator.AppConfig;
 import nb.kafka.operator.Topic;
 import nb.kafka.operator.util.TopicUtil;
 
+/**
+ * A skeleton class for watching Kubernetes resources that represent topic models.
+ * @param <T> The type of Kubernetes resource to watch.
+ */
 public abstract class KubernetesWatcher<T extends HasMetadata> extends AbstractTopicWatcher implements Watcher<T> {
   private static final Logger log = LoggerFactory.getLogger(KubernetesWatcher.class);
 

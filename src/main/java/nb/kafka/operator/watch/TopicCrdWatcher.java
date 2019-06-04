@@ -22,6 +22,10 @@ import nb.kafka.operator.model.KafkaTopicList;
 import nb.kafka.operator.model.KafkaTopicSpec;
 import nb.kafka.operator.util.KubernetesUtil;
 
+/**
+ * A topic watcher that watches topic model represented by custom resource definition.
+ * It will watch all CRDs of kind KafkaTopic.
+ */
 public class TopicCrdWatcher extends KubernetesWatcher<KafkaTopic> {
   private static final Logger log = LoggerFactory.getLogger(TopicCrdWatcher.class);
 

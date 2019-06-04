@@ -9,6 +9,9 @@ import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 
+/**
+ * Kafka Management interface.
+ */
 public interface KafkaAdmin {
   int deleteTopic(String topicName) throws InterruptedException, ExecutionException;
   int createTopic(NewTopic topic) throws InterruptedException, ExecutionException;

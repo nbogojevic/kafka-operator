@@ -19,17 +19,17 @@ import nb.kafka.operator.util.KubernetesUtil;
 import nb.kafka.operator.util.PropertyUtil;
 import nb.kafka.operator.watch.ConfigMapWatcher;
 
+/**
+ * A topic importer that imports topic as config maps.
+ */
 public class ConfigMapImporter extends AbstractTopicImporter {
+
   private static final Logger log = LoggerFactory.getLogger(ConfigMapImporter.class);
 
   private static final String PROPERTIES_KEY = "properties";
-
   private static final String REPLICATION_FACTOR_KEY = "replication-factor";
-
   private static final String PARTITIONS_KEY = "partitions";
-
   private static final String TOPIC_NAME_KEY = "name";
-
   private static final String ACL_KEY = "acl";
 
   private final KubernetesClient client;
@@ -40,6 +40,10 @@ public class ConfigMapImporter extends AbstractTopicImporter {
     this.client = client;
   }
 
+  /**
+   * Create a config map from a topic model.
+   * @param topic The topic model.
+   */
   @Override
   protected void createTopicResource(Topic topic) {
     ConfigMap cm = buildConfigMapResource(topic);

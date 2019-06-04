@@ -9,13 +9,13 @@ import io.fabric8.kubernetes.api.model.KubernetesResource;
 @JsonDeserialize(using = JsonDeserializer.None.class)
 public class KafkaTopicSpec implements KubernetesResource {
   private static final long serialVersionUID = -2976660651367253201L;
-  
+
   private String name;
   private short replicationFactor;
   private int partitions;
   private String properties;
   private boolean acl;
-  
+
   public String getName() {
     return name;
   }

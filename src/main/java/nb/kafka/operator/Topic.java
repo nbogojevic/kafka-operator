@@ -20,7 +20,7 @@ public class Topic {
   public String getName() {
     return name;
   }
-  
+
   public short getReplicationFactor() {
     return replicationFactor;
   }
@@ -28,7 +28,7 @@ public class Topic {
   public int getPartitions() {
     return partitions;
   }
-  
+
   public Map<String, String> getProperties() {
     return properties;
   }
@@ -36,7 +36,7 @@ public class Topic {
   public boolean isAcl() {
     return acl;
   }
-  
+
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();

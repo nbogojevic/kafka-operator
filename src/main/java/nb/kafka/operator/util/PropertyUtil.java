@@ -1,10 +1,9 @@
-package nb.common;
+package nb.kafka.operator.util;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -12,14 +11,18 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class Config {
-  private final static Logger log = LoggerFactory.getLogger(Config.class);
+public final class PropertyUtil {
+  private static final Logger log = LoggerFactory.getLogger(PropertyUtil.class);
 
-  private Config() {
+  private PropertyUtil() {
   }
 
   public static boolean isNullOrEmpty(String str) {
     return str == null || str.isEmpty();
+  }
+
+  public static boolean isBlank(String str) {
+    return str == null || str.trim().isEmpty();
   }
 
   public static boolean isNotNullOrEmpty(String str) {
@@ -51,15 +54,15 @@ public final class Config {
 
   public static String getSystemPropertyOrEnvVar(String systemPropertyName, String defaultValue) {
     return getSystemPropertyOrEnvVar(systemPropertyName, convertSystemPropertyNameToEnvVar(systemPropertyName),
-                                     defaultValue);
+        defaultValue);
   }
 
   public static String getSystemPropertyOrEnvVar(String systemPropertyName) {
-    return getSystemPropertyOrEnvVar(systemPropertyName, (String) null);
+    return getSystemPropertyOrEnvVar(systemPropertyName, (String)null);
   }
-  
+
   public static String kubeAnnotation(String path) {
-    return  "topic.kafka.nb/" + path;
+    return "topic.kafka.nb/" + path;
   }
 
   public static Boolean getSystemPropertyOrEnvVar(String systemPropertyName, Boolean defaultValue) {
@@ -107,22 +110,24 @@ public final class Config {
       props.store(sw, null);
       return sw.toString();
     } catch (IOException e) {
-      log.error("This exception should not occur.", e);      
-      return "";
+      log.error("This exception should not occur.", e);
     }
+    return "";
   }
 
   public static Map<String, String> propertiesFromString(String properties) throws IOException {
     Properties props = new Properties();
     props.load(new StringReader(properties));
-    Map<String, String> map = new HashMap<>();
-    props.forEach((k, v) -> map.put((String) k, (String) v));
-    return map;
+    return props.entrySet()
+        .stream()
+        .collect(Collectors.toMap(e -> (String)e.getKey(), e -> (String)e.getValue()));
   }
 
   public static Map<String, String> stringToMap(String labels) {
-    return Arrays.asList(labels.split(",")).stream().map(s -> s.split("="))
-        .filter(s -> s.length == 2).collect(Collectors.toMap(s -> s[0], s -> s[1]));
+    return Arrays.asList(labels.split(","))
+        .stream()
+        .map(s -> s.split("="))
+        .filter(s -> s.length == 2)
+        .collect(Collectors.toMap(s -> s[0], s -> s[1]));
   }
-
 }

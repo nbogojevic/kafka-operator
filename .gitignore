@@ -33,8 +33,13 @@ local.properties
 .loadpath
 .recommenders
 
+# Idea
+.idea/
+*.iml
+
 # Eclipse Core
 .project
+.vscode/
 
 # External tool builders
 .externalToolBuilders/
@@ -81,6 +86,8 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
+*.lst
+*Test.xml
 
 # Exclude maven wrapper
 !/.mvn/wrapper/maven-wrapper.jar

@@ -48,7 +48,7 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
-import nb.kafka.operator.legacy.AbstractKubernetesBasedManager;
+import nb.kafka.operator.importer.AbstractTopicImporter;
 import nb.kafka.operator.util.PropertyUtil;
 
 public class AclManager implements Closeable {
@@ -148,10 +148,10 @@ public class AclManager implements Closeable {
     secretMap.put("kafka-client-jaas.conf", jaasConf(assignedUser.getKey(), assignedUser.getValue()));
 
     Map<String, String> labels = new HashMap<>();
-    labels.put(AbstractKubernetesBasedManager.GENERATOR_LABEL, config.getOperatorId());
+    labels.put(AbstractTopicImporter.GENERATOR_LABEL, config.getOperatorId());
     labels.put("config", "kafka-topic-credentials");
     Map<String, String> annotations = new HashMap<>();
-    annotations.put(AbstractKubernetesBasedManager.GENERATED_ANNOTATION, ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT));
+    annotations.put(AbstractTopicImporter.GENERATED_ANNOTATION, ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT));
     Secret topicSecret = new SecretBuilder().withNewMetadata()
       .withName(secretName)
       .withLabels(labels)

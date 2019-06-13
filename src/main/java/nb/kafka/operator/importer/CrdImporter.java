@@ -24,6 +24,9 @@ import nb.kafka.operator.util.KubernetesUtil;
 import nb.kafka.operator.util.PropertyUtil;
 import nb.kafka.operator.watch.TopicCrdWatcher;
 
+/**
+ * A topic importer that imports topic as custom resource definition of kind KafkaTopic.
+ */
 public class CrdImporter extends AbstractTopicImporter {
   private static final Logger log = LoggerFactory.getLogger(CrdImporter.class);
 
@@ -36,6 +39,10 @@ public class CrdImporter extends AbstractTopicImporter {
     crd = KubernetesUtil.getTopicCrd(client, watcher.resourceKind());
   }
 
+  /**
+   * Create a custom resource definition from a topic model.
+   * @param topic The topic model.
+   */
   @Override
   protected void createTopicResource(Topic topic) {
     Map<String, String> labels = ((TopicCrdWatcher)topicWatcher()).labels();

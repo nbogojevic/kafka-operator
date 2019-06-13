@@ -14,6 +14,11 @@ import nb.kafka.operator.util.PropertyUtil;
 import nb.kafka.operator.util.TopicUtil;
 import nb.kafka.operator.watch.TopicWatcher;
 
+/**
+ * Skeleton class for topic importer that implements a common import logic. The
+ * {@link AbstractTopicImporter#createTopicResource(Topic)} must be implemented depending on the type of Kubernetes
+ * resource to create.
+ */
 public abstract class AbstractTopicImporter implements TopicImporter {
   private static final Logger log = LoggerFactory.getLogger(AbstractTopicImporter.class);
 
@@ -31,6 +36,10 @@ public abstract class AbstractTopicImporter implements TopicImporter {
     this.topicManager = topicManager;
   }
 
+  /*
+   * (non-Javadoc)
+   * @see TopicImporter#importTopics()
+   */
   @Override
   public void importTopics() {
     try {
@@ -56,6 +65,10 @@ public abstract class AbstractTopicImporter implements TopicImporter {
     }
   }
 
+  /**
+   * Create the relevant Kubernetes resource from a topic model.
+   * @param topic The topic model.
+   */
   protected abstract void createTopicResource(Topic topic);
 
   public AppConfig appConfig() {

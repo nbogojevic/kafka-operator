@@ -4,6 +4,9 @@ import java.util.function.Consumer;
 
 import nb.kafka.operator.Topic;
 
+/**
+ * Abstract implementation of topic model watcher, providing simple listener management.
+ */
 public abstract class AbstractTopicWatcher implements TopicWatcher {
   private Consumer<Topic> onCreate;
   private Consumer<Topic> onUpdate;

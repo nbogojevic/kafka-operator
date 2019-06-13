@@ -19,26 +19,23 @@ import io.fabric8.kubernetes.client.Watch;
 import nb.kafka.operator.AppConfig;
 import nb.kafka.operator.Topic;
 
+/**
+ * A topic watcher that watches topic model represented by config maps.
+ * It will watch all config maps having the label config=kafka-topic
+ */
 public class ConfigMapWatcher extends KubernetesWatcher<ConfigMap> {
 
   private static final String PROPERTIES_KEY = "properties";
-
   private static final String REPLICATION_FACTOR_KEY = "replication-factor";
-
   private static final String PARTITIONS_KEY = "partitions";
-
   private static final String TOPIC_NAME_KEY = "name";
-
   private static final String ACL_KEY = "acl";
-
   private static final String KAFKA_TOPIC_LABEL_VALUE = "kafka-topic";
-
-  private static final String CONFIG_LABEL = "config";
+  private static final String CONFIG_LABEL_KEY = "config";
 
   private static final Logger log = LoggerFactory.getLogger(ConfigMapWatcher.class);
 
   private Watch watch;
-
 
   public ConfigMapWatcher(KubernetesClient client, AppConfig config) {
     super(client, ConfigMap.class, config);
@@ -67,7 +64,7 @@ public class ConfigMapWatcher extends KubernetesWatcher<ConfigMap> {
   @Override
   public Map<String, String> labels() {
     Map<String, String> labels = super.labels();
-    labels.put(CONFIG_LABEL, KAFKA_TOPIC_LABEL_VALUE);
+    labels.put(CONFIG_LABEL_KEY, KAFKA_TOPIC_LABEL_VALUE);
     return labels;
   }
 

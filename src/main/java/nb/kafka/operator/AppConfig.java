@@ -1,7 +1,11 @@
 package nb.kafka.operator;
 
+import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Hold the application configuration.
+ */
 public class AppConfig {
   private String kafkaUrl;
   private String securityProtocol;
@@ -15,6 +19,26 @@ public class AppConfig {
   private String consumedUsersSecretName;
   private Map<String, String> standardAclLabels;
 
+  private static AppConfig defaultConfig;
+  public static final AppConfig defaultConfig() {
+    if (defaultConfig == null) {
+      AppConfig conf = new AppConfig();
+      conf.kafkaUrl = "kafka:9092";
+      conf.securityProtocol = "";
+      conf.defaultReplicationFactor = (short)2;
+      conf.enableTopicDelete = false;
+      conf.enableTopicImport = true;
+      conf.enableAclManagement = false;
+      conf.operatorId = "kafka-operator";
+      conf.standardLabels = new HashMap<>();
+      conf.usernamePoolSecretName = "kafka-cluster-kafka-auth-pool";
+      conf.consumedUsersSecretName = "kafka-cluster-kafka-consumed-auth-pool";
+      conf.standardAclLabels = new HashMap<>();
+      defaultConfig = conf;
+    }
+    return defaultConfig;
+  }
+  
   public String getKafkaUrl() {
     return kafkaUrl;
   }

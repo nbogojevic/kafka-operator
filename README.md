@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/benjaminbillet/kafka-operator.svg?branch=master)](https://travis-ci.org/benjaminbillet/kafka-operator)
+[![Code Coverage](https://codecov.io/github/benjaminbillet/kafka-operator/coverage.svg)](https://codecov.io/gh/benjaminbillet/kafka-operator)
+
 # kafka operator
 
 Kafka operator is a process that automatically manages creation and deletion of kafka topics, their number of partitions, replicas as well as properties.  

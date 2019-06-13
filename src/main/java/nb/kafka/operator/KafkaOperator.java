@@ -7,6 +7,7 @@ import static nb.kafka.operator.util.PropertyUtil.isBlank;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import io.undertow.util.StatusCodes;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.slf4j.Logger;
@@ -38,6 +39,8 @@ public class KafkaOperator {
   public static void main(String[] args) {
     App.start("kafka.operator");
     AppConfig config = loadConfig();
+
+    HealthServer.start();
 
     KafkaOperator operator = new KafkaOperator(config);
     if (config.isEnabledTopicImport()) {
@@ -104,6 +107,7 @@ public class KafkaOperator {
   }
 
   private void shutdown() {
+    //TODO handle graceful shutdown
     topicWatcher.close();
     if (aclManager != null) {
       aclManager.close();

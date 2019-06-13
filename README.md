@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/benjaminbillet/kafka-operator.svg?branch=master)](https://travis-ci.org/benjaminbillet/kafka-operator)
-[![Code Coverage](https://codecov.io/github/benjaminbillet/kafka-operator/coverage.svg)](https://codecov.io/gh/benjaminbillet/kafka-operator)
+[![Build Status](https://travis-ci.org/nbogojevic/kafka-operator.svg?branch=master)](https://travis-ci.org/nbogojevic/kafka-operator)
+[![Code Coverage](https://codecov.io/github/nbogojevic/kafka-operator/coverage.svg)](https://codecov.io/gh/nbogojevic/kafka-operator)
 
 # kafka operator
 

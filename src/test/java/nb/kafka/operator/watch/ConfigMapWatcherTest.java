@@ -1,5 +1,4 @@
 package nb.kafka.operator.watch;
-import static nb.common.App.metrics;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -39,7 +38,7 @@ public class ConfigMapWatcherTest {
     server = new KubernetesServer();
     server.before();
     
-    appConfig = new AppConfig();
+    appConfig = AppConfig.defaultConfig();
     appConfig.setKafkaUrl("localhost:9092");
 
     Map<String, String> standardLabels = Collections.singletonMap("config", "kafka-topic");
@@ -48,7 +47,6 @@ public class ConfigMapWatcherTest {
 
   @AfterEach
   void tearDown() {
-    metrics().remove("managed-topics");
     server.after();
     server = null;
   }

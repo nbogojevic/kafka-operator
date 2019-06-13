@@ -20,7 +20,7 @@ public class Topic {
     this.properties = properties;
     this.acl = acl;
   }
-  
+
   public Topic(Topic topic) {
     this.name = topic.name;
     this.partitions = topic.partitions;

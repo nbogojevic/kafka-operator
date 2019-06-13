@@ -1,6 +1,5 @@
 package nb.kafka.operator;
 
-import static nb.common.App.metrics;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeast;
@@ -28,23 +27,38 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.fabric8.kubernetes.api.model.ConfigMapList;
+import io.fabric8.kubernetes.client.server.mock.KubernetesServer;
 import nb.kafka.operator.util.WhiteboxUtil;
 import nb.kafka.operator.watch.AbstractTopicWatcher;
 
 public class KafkaOperatorTest {
   private KafkaOperator operator;
-  private AppConfig config = KafkaOperator.loadConfig();
+  private AppConfig config = AppConfig.defaultConfig();
+  private KubernetesServer kubernetesServerMock;
+  private KafkaAdmin kafkaAdminMock;
 
   @BeforeEach
   void setUp() {
-    config.setKafkaUrl("localhost:9092");
-    operator = new KafkaOperator(config);
+    // kafka admin base mock
+    kafkaAdminMock = mock(KafkaAdmin.class);
+    
+    // kubernetes server mock
+    kubernetesServerMock = new KubernetesServer();
+    kubernetesServerMock.before();
+
+    kubernetesServerMock.expect()
+      .withPath("/api/v1/namespaces/test/configmaps?labelSelector=config%3Dkafka-topic")
+      .andReturn(200, new ConfigMapList())
+      .once();
+
+    operator = new KafkaOperator(config, kubernetesServerMock.getClient(), kafkaAdminMock);
   }
 
   @AfterEach
   void tearDown() {
     operator = null;
-    metrics().remove("managed-topics");
+    kubernetesServerMock.after();
   }
 
   @Test
@@ -52,10 +66,7 @@ public class KafkaOperatorTest {
     // Arrange
     Topic topic = new Topic("test-topic", 1, (short)1, Collections.singletonMap("retention.ms", "3600000"), false);
 
-    KafkaAdmin kafkaAdminMock = mock(KafkaAdmin.class);
     when(kafkaAdminMock.createTopic(any(NewTopic.class))).thenReturn(1);
-
-    injectKafkaAdminMock(operator, kafkaAdminMock);
 
     // Act
     emitCreate(operator, topic);
@@ -72,13 +83,10 @@ public class KafkaOperatorTest {
     TopicDescription existingTopic = buildTopicDescription(topic);
     Config existingTopicProperties = buildTopicConfig(topic);
     
-    KafkaAdmin kafkaAdminMock = mock(KafkaAdmin.class);
     when(kafkaAdminMock.createTopic(any(NewTopic.class))).thenThrow(new ExecutionException(new TopicExistsException("exists")));
     when(kafkaAdminMock.describeTopic(any(String.class))).thenReturn(existingTopic);
     when(kafkaAdminMock.describeConfigs(any(String.class))).thenReturn(existingTopicProperties);
     
-    injectKafkaAdminMock(operator, kafkaAdminMock);
-
     // Act
     emitCreate(operator, topic);
 
@@ -101,12 +109,9 @@ public class KafkaOperatorTest {
     TopicDescription existingTopic = buildTopicDescription(updatedTopic);
     Config existingTopicProperties = new Config(Collections.singletonList(new ConfigEntry("retention.ms", "200000")));
     
-    KafkaAdmin kafkaAdminMock = mock(KafkaAdmin.class);
     when(kafkaAdminMock.listTopics()).thenReturn(Collections.singleton(updatedTopic.getName()));
     when(kafkaAdminMock.describeTopic(any(String.class))).thenReturn(existingTopic);
     when(kafkaAdminMock.describeConfigs(any(String.class))).thenReturn(existingTopicProperties);
-
-    injectKafkaAdminMock(operator, kafkaAdminMock);
 
     // Act
     emitUpdate(operator, updatedTopic);
@@ -128,12 +133,9 @@ public class KafkaOperatorTest {
    TopicDescription existingTopic = buildTopicDescription(updatedTopic.getName(), 1, updatedTopic.getReplicationFactor());
    Config existingTopicProperties = buildTopicConfig(updatedTopic);
 
-   KafkaAdmin kafkaAdminMock = mock(KafkaAdmin.class);
    when(kafkaAdminMock.listTopics()).thenReturn(Collections.singleton(updatedTopic.getName()));
    when(kafkaAdminMock.describeTopic(any(String.class))).thenReturn(existingTopic);
    when(kafkaAdminMock.describeConfigs(any(String.class))).thenReturn(existingTopicProperties);
-
-   injectKafkaAdminMock(operator, kafkaAdminMock);
 
    // Act
    emitUpdate(operator, updatedTopic);
@@ -155,12 +157,9 @@ public class KafkaOperatorTest {
    TopicDescription existingTopic = buildTopicDescription(updatedTopic.getName(), 1, updatedTopic.getReplicationFactor());
    Config existingTopicProperties = new Config(Collections.singletonList(new ConfigEntry("retention.ms", "200000")));
 
-   KafkaAdmin kafkaAdminMock = mock(KafkaAdmin.class);
    when(kafkaAdminMock.listTopics()).thenReturn(Collections.singleton(updatedTopic.getName()));
    when(kafkaAdminMock.describeTopic(any(String.class))).thenReturn(existingTopic);
    when(kafkaAdminMock.describeConfigs(any(String.class))).thenReturn(existingTopicProperties);
-
-   injectKafkaAdminMock(operator, kafkaAdminMock);
 
    // Act
    emitUpdate(operator, updatedTopic);
@@ -182,12 +181,9 @@ public class KafkaOperatorTest {
     TopicDescription existingTopic = buildTopicDescription(updatedTopic.getName(), updatedTopic.getPartitions(), 1);
     Config existingTopicProperties = buildTopicConfig(updatedTopic);
 
-    KafkaAdmin kafkaAdminMock = mock(KafkaAdmin.class);
     when(kafkaAdminMock.listTopics()).thenReturn(Collections.singleton(updatedTopic.getName()));
     when(kafkaAdminMock.describeTopic(any(String.class))).thenReturn(existingTopic);
     when(kafkaAdminMock.describeConfigs(any(String.class))).thenReturn(existingTopicProperties);
-
-    injectKafkaAdminMock(operator, kafkaAdminMock);
 
     // Act
     assertThrows(IllegalArgumentException.class, () -> emitUpdate(operator, updatedTopic));
@@ -209,12 +205,9 @@ public class KafkaOperatorTest {
     TopicDescription existingTopic = buildTopicDescription(updatedTopic.getName(), 3, updatedTopic.getReplicationFactor());
     Config existingTopicProperties = buildTopicConfig(updatedTopic);
 
-    KafkaAdmin kafkaAdminMock = mock(KafkaAdmin.class);
     when(kafkaAdminMock.listTopics()).thenReturn(Collections.singleton(updatedTopic.getName()));
     when(kafkaAdminMock.describeTopic(any(String.class))).thenReturn(existingTopic);
     when(kafkaAdminMock.describeConfigs(any(String.class))).thenReturn(existingTopicProperties);
-
-    injectKafkaAdminMock(operator, kafkaAdminMock);
 
     // Act
     assertThrows(IllegalArgumentException.class, () -> emitUpdate(operator, updatedTopic));
@@ -233,9 +226,6 @@ public class KafkaOperatorTest {
     // Arrange
     Topic deletedTopic = new Topic("test-topic", 1, (short)1, Collections.singletonMap("retention.ms", "3600000"),
         false);
-    KafkaAdmin kafkaAdminMock = mock(KafkaAdmin.class);
-
-    injectKafkaAdminMock(operator, kafkaAdminMock);
 
     // Act
     emitDelete(operator, deletedTopic.getName());
@@ -245,10 +235,6 @@ public class KafkaOperatorTest {
     verify(kafkaAdminMock, atMost(1)).deleteTopic(deletedTopic.getName());
   }
   
-  private void injectKafkaAdminMock(KafkaOperator operator, KafkaAdmin kafkaAdmin) throws Exception {
-    TopicManager topicMgr = new TopicManager(kafkaAdmin, config);
-    WhiteboxUtil.injectField(operator, "topicManager", topicMgr);
-  }
 
   private void emitCreate(KafkaOperator operator, Topic topic) throws Throwable {
     AbstractTopicWatcher watcher = WhiteboxUtil.readField(operator, "topicWatcher");

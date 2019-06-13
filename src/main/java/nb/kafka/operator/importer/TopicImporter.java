@@ -7,7 +7,7 @@ package nb.kafka.operator.importer;
  * - create the missing Kubernetes resources
  */
 public interface TopicImporter {
-  
+
   /**
    * Import the unmanaged Kafka topics as Kubernetes resources.
    */

@@ -1,48 +1,98 @@
 package nb.common;
 
-import java.lang.management.ManagementFactory;
+import static nb.kafka.operator.util.PropertyUtil.getSystemPropertyOrEnvVar;
+import static nb.kafka.operator.util.PropertyUtil.isBlank;
 
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
+import java.io.IOException;
+import java.net.InetSocketAddress;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.JmxReporter;
-import com.codahale.metrics.MetricRegistry;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.jmx.JmxConfig;
+import io.micrometer.jmx.JmxMeterRegistry;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.prometheus.client.exporter.HTTPServer;
+import nb.kafka.operator.AppConfig;
+import nb.kafka.operator.KafkaOperator;
+import nb.kafka.operator.util.PropertyUtil;
 
 public final class App {
 
   private static final Logger log = LoggerFactory.getLogger(App.class);
 
-  private static final MetricRegistry metrics;
+  public static void main(String[] args) {
+    AppConfig config = loadConfig();
+    setupJmxRegistry(config.getOperatorId());
+    Runnable stopHttpServer = setupPrometheusRegistry(config.getPrometheusEndpointPort());
+    Runtime.getRuntime().addShutdownHook(new Thread(stopHttpServer));
 
-  private App() {
+    KafkaOperator operator = new KafkaOperator(config);
+    if (config.isEnabledTopicImport()) {
+      log.debug("Importing topics");
+      operator.importTopics();
+    }
+    operator.watch();
+    log.info("Operator {} started: Managing cluster {}", config.getOperatorId(), config.getKafkaUrl());
   }
 
-  static {
-    metrics = new MetricRegistry();
+  public static AppConfig loadConfig() {
+    AppConfig config = new AppConfig();
+    AppConfig defaultConfig = AppConfig.defaultConfig();
+
+    config.setKafkaUrl(getSystemPropertyOrEnvVar("bootstrap.server", defaultConfig.getKafkaUrl()));
+    config.setOperatorId(getSystemPropertyOrEnvVar("operator.id", defaultConfig.getOperatorId()));
+    config.setDefaultReplicationFactor(
+        getSystemPropertyOrEnvVar("default.replication.factor", defaultConfig.getDefaultReplicationFactor()));
+    config.setEnableTopicImport(getSystemPropertyOrEnvVar("import.topics", defaultConfig.isEnabledTopicImport()));
+    config.setEnableAclManagement(getSystemPropertyOrEnvVar("enable.acl", defaultConfig.isEnabledAclManagement()));
+    config.setSecurityProtocol(getSystemPropertyOrEnvVar("security.protocol", ""));
+    if (config.isEnabledAclManagement() && isBlank(config.getSecurityProtocol())) {
+      config.setSecurityProtocol("SASL_PLAINTEXT");
+      log.warn("ACL was enabled, but not security.protocol, forcing security protocol to {}",
+          config.getSecurityProtocol());
+    }
+    config.setStandardLabels(PropertyUtil.stringToMap(getSystemPropertyOrEnvVar("standard.labels", "")));
+    config.setStandardAclLabels(PropertyUtil.stringToMap(getSystemPropertyOrEnvVar("standard.acl.labels", "")));
+    config.setUsernamePoolSecretName(
+        getSystemPropertyOrEnvVar("username.pool.secret", defaultConfig.getUsernamePoolSecretName()));
+    config.setConsumedUsersSecretName(
+        getSystemPropertyOrEnvVar("consumed.usernames.secret", defaultConfig.getConsumedUsersSecretName()));
+    config.setPrometheusEndpointPort(
+        getSystemPropertyOrEnvVar("prometheus.port", defaultConfig.getPrometheusEndpointPort()));
+
+    log.debug("Loaded config, {}", config);
+    return config;
   }
 
-  public static MetricRegistry metrics() {
-    return metrics;
+  public static void setupJmxRegistry(String operatorId) {
+    Metrics.addRegistry(new JmxMeterRegistry(new JmxConfig() {
+      @Override
+      public String get(String key) {
+        return null;
+      }
+
+      @Override
+      public String domain() {
+        return operatorId;
+      }
+    }, Clock.SYSTEM));
   }
 
-  public static void start(String metricsDomain) {
-    JmxReporter.forRegistry(metrics()).inDomain(metricsDomain).build().start();
-  }
+  public static Runnable setupPrometheusRegistry(int port) {
+    PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+    Metrics.addRegistry(prometheusRegistry);
 
-  public static boolean registerMBean(Object bean, String name) {
+    // the registry exposes only a scrape method for building prometheus-formatted data
+    // we have to deal with the HTTP endpoint
     try {
-      ManagementFactory.getPlatformMBeanServer().registerMBean(bean, new ObjectName(name));
-      return true;
-    } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException
-             | MalformedObjectNameException e) {
-      log.error("Unable to register monitored topics MBean. They will not be exposed via JMX.", e);
-      return false;
+      HTTPServer server = new HTTPServer(new InetSocketAddress(port), prometheusRegistry.getPrometheusRegistry(), true);
+      return server::stop;
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 }

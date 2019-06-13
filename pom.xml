@@ -16,7 +16,7 @@
 		<version.metrics>3.2.3</version.metrics>
 		<version.fabric8.k8s.client>3.0.1</version.fabric8.k8s.client>
 		<version.fabric8.openshift.client>3.0.3</version.fabric8.openshift.client>
-		<version.prometheus.exproter>0.1.0</version.prometheus.exproter>
+		<version.prometheus.exporter>0.1.0</version.prometheus.exporter>
 		<fabric8.mode>kubernetes</fabric8.mode>
 		<mockito.version>2.23.4</mockito.version>
 		<maven-surefire-plugin.version>2.22.1</maven-surefire-plugin.version>
@@ -24,6 +24,8 @@
 		<maven-assembly-plugin.version>3.1.0</maven-assembly-plugin.version>
 		<kube.mock.version>3.0.1</kube.mock.version>
 		<http.mock.version>0.0.12</http.mock.version>
+		<prometheus.http.version>0.6.0</prometheus.http.version>
+		<micrometer.version>1.1.1</micrometer.version>
 	</properties>
 
 	<build>
@@ -59,7 +61,7 @@
 					<descriptorRefs>
 						<descriptorRef>jar-with-dependencies</descriptorRef>
 					</descriptorRefs>
-					<!-- MainClass in mainfest make a executable jar -->
+					<!-- MainClass in manifest make a executable jar -->
 					<archive>
 						<manifest>
 							<mainClass>nb.kafka.operator.KafkaOperator</mainClass>
@@ -107,7 +109,7 @@
 							<goal>prepare-agent</goal>
 						</goals>
 					</execution>
-                    <!-- attached to Maven test phase -->
+					<!-- attached to Maven test phase -->
 					<execution>
 						<id>report</id>
 						<phase>test</phase>
@@ -227,7 +229,7 @@
 		<dependency>
 			<groupId>io.prometheus.jmx</groupId>
 			<artifactId>jmx_prometheus_javaagent</artifactId>
-			<version>${version.prometheus.exproter}</version>
+			<version>${version.prometheus.exporter}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.fabric8</groupId>
@@ -276,6 +278,26 @@
 					<artifactId>tools</artifactId>
 				</exclusion>
 			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-core</artifactId>
+			<version>${micrometer.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-jmx</artifactId>
+			<version>${micrometer.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+			<version>${micrometer.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.prometheus</groupId>
+			<artifactId>simpleclient_httpserver</artifactId>
+			<version>${prometheus.http.version}</version>
 		</dependency>
 	</dependencies>
 

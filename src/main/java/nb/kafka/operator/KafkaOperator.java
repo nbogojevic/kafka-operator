@@ -60,8 +60,6 @@ public class KafkaOperator {
       this.meterManager = meterManager;
       this.managedTopics = new ManagedTopicList(meterManager, config, topicWatcher.listTopics());
 
-      Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
-
       this.operatorState = State.CREATED;
       meterManager.register(Gauge.builder("operator.state", operatorState::ordinal));
     } catch (Throwable t) {

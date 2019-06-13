@@ -17,8 +17,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import nb.common.App;
 import nb.kafka.operator.util.MeterManager;
@@ -94,5 +94,25 @@ public class MeterTest {
     // Assert
     assertEquals(1, topicCount.value());
     assertEquals(1, topicLiveness.value());
+  }
+
+  @Test
+  public void testManagedTopicList() throws Throwable {
+    ManagedTopicList managedTopics = new ManagedTopicList(meterMgr, config,
+        Arrays.asList(new Topic("test-topic", 1, (short)1, null, false)));
+
+    assertEquals(1, managedTopics.size());
+
+    managedTopics.delete("unexisting-topic");
+    assertEquals(1, managedTopics.size());
+
+    managedTopics.delete("test-topic");
+    assertEquals(0, managedTopics.size());
+
+    managedTopics.add(new Topic("test-topic2", 1, (short)1, null, false));
+    assertEquals(1, managedTopics.size());
+
+    managedTopics.add(new Topic("test-topic2", 1, (short)1, null, false));
+    assertEquals(1, managedTopics.size());
   }
 }

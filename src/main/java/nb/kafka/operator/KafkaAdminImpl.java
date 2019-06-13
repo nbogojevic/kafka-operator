@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.kafka.clients.admin.AdminClient;
@@ -80,14 +79,6 @@ public class KafkaAdminImpl implements KafkaAdmin {
     dt.all().get();
     return dt.values().get(topicName).get();
   }
-
-  @Override
-  public Set<String> listTopics(int timeout, TimeUnit unit)
-      throws InterruptedException, ExecutionException, TimeoutException {
-    KafkaFuture<Set<String>> names = client.listTopics().names();
-    KafkaFuture.allOf(names).get(timeout, unit);
-    return names.get();
-   }
 
   @Override
   public Set<String> listTopics() throws InterruptedException, ExecutionException, TimeoutException {

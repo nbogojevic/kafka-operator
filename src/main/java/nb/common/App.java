@@ -28,9 +28,12 @@ public final class App {
     AppConfig config = loadConfig();
     setupJmxRegistry(config.getOperatorId());
     Runnable stopHttpServer = setupPrometheusRegistry(config.getPrometheusEndpointPort());
-    Runtime.getRuntime().addShutdownHook(new Thread(stopHttpServer));
 
     KafkaOperator operator = new KafkaOperator(config);
+
+    Runtime.getRuntime().addShutdownHook(new Thread(operator::shutdown));
+    Runtime.getRuntime().addShutdownHook(new Thread(stopHttpServer));
+
     if (config.isEnabledTopicImport()) {
       log.debug("Importing topics");
       operator.importTopics();

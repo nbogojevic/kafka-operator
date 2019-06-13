@@ -1,6 +1,7 @@
 package nb.kafka.operator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -45,7 +46,17 @@ public class KafkaOperatorStateTest {
   }
 
   @Test
-  public void failureStateTest() throws Throwable {
+  public void failureStartupTest() throws Throwable {
+    assertThrows(NullPointerException.class, () -> new KafkaOperator(null, null, null, null, null));
+    try {
+      KafkaOperator operator = new KafkaOperator(null, null, null, null, null);
+      assertEquals(State.FAILED, operator.getState());
+    } catch (NullPointerException e) {
+    }
+  }
+
+  @Test
+  public void failureWatchStateTest() throws Throwable {
     KubernetesClient kubeClientMock = mock(KubernetesClient.class);
     KafkaAdmin kafkaAdminMock = mock(KafkaAdmin.class);
     ConfigMapWatcher watcherMock = mock(ConfigMapWatcher.class);

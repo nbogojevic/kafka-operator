@@ -277,6 +277,19 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+        <!-- Declare kafka-junit5 dependency -->
+        <dependency>
+            <groupId>com.salesforce.kafka.test</groupId>
+            <artifactId>kafka-junit5</artifactId>
+            <version>3.1.1</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Include Kafka 2.0.x -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka_2.11</artifactId>
+            <version>${version.kafka}</version>
+            <scope>test</scope>
+        </dependency>
 	</dependencies>
-
 </project>

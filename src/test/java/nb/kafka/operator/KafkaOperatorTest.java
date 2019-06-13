@@ -42,7 +42,7 @@ public class KafkaOperatorTest {
   void setUp() {
     // kafka admin base mock
     kafkaAdminMock = mock(KafkaAdmin.class);
-    
+
     // kubernetes server mock
     kubernetesServerMock = new KubernetesServer();
     kubernetesServerMock.before();
@@ -75,25 +75,25 @@ public class KafkaOperatorTest {
     verify(kafkaAdminMock, atLeast(1)).createTopic(any(NewTopic.class));
     verify(kafkaAdminMock, atMost(1)).createTopic(any(NewTopic.class));
   }
-  
+
   @Test
   public void testCreateTopicAlreadyExistsInKafka() throws Throwable {
     // Arrange
     Topic topic = new Topic("test-topic", 1, (short)1, Collections.singletonMap("retention.ms", "3600000"), false);
     TopicDescription existingTopic = buildTopicDescription(topic);
     Config existingTopicProperties = buildTopicConfig(topic);
-    
+
     when(kafkaAdminMock.createTopic(any(NewTopic.class))).thenThrow(new ExecutionException(new TopicExistsException("exists")));
     when(kafkaAdminMock.describeTopic(any(String.class))).thenReturn(existingTopic);
     when(kafkaAdminMock.describeConfigs(any(String.class))).thenReturn(existingTopicProperties);
-    
+
     // Act
     emitCreate(operator, topic);
 
     // Assert
     verify(kafkaAdminMock, atLeast(1)).createTopic(any(NewTopic.class));
     verify(kafkaAdminMock, atMost(1)).createTopic(any(NewTopic.class));
-    
+
     // no update should never been called because new and existing topic are identical
     verify(kafkaAdminMock, atLeast(0)).alterConfigs(topic);
     verify(kafkaAdminMock, atMost(0)).alterConfigs(topic);
@@ -108,7 +108,7 @@ public class KafkaOperatorTest {
         false);
     TopicDescription existingTopic = buildTopicDescription(updatedTopic);
     Config existingTopicProperties = new Config(Collections.singletonList(new ConfigEntry("retention.ms", "200000")));
-    
+
     when(kafkaAdminMock.listTopics()).thenReturn(Collections.singleton(updatedTopic.getName()));
     when(kafkaAdminMock.describeTopic(any(String.class))).thenReturn(existingTopic);
     when(kafkaAdminMock.describeConfigs(any(String.class))).thenReturn(existingTopicProperties);
@@ -124,7 +124,7 @@ public class KafkaOperatorTest {
     verify(kafkaAdminMock, atLeast(0)).createTopic(any(NewTopic.class));
     verify(kafkaAdminMock, atMost(0)).createTopic(any(NewTopic.class));
   }
- 
+
  @Test
  public void testUpdateTopicPartitions() throws Throwable {
    // Arrange
@@ -148,7 +148,7 @@ public class KafkaOperatorTest {
    verify(kafkaAdminMock, atLeast(0)).createTopic(any(NewTopic.class));
    verify(kafkaAdminMock, atMost(0)).createTopic(any(NewTopic.class));
  }
- 
+
  @Test
  public void testUpdateTopicPartitionsAndProperties() throws Throwable {
    // Arrange
@@ -220,10 +220,12 @@ public class KafkaOperatorTest {
     verify(kafkaAdminMock, atLeast(0)).createTopic(any(NewTopic.class));
     verify(kafkaAdminMock, atMost(0)).createTopic(any(NewTopic.class));
   }
-  
+
   @Test
   public void testDeleteTopic() throws Throwable {
     // Arrange
+    config.setEnableTopicDelete(true);
+
     Topic deletedTopic = new Topic("test-topic", 1, (short)1, Collections.singletonMap("retention.ms", "3600000"),
         false);
 
@@ -234,7 +236,24 @@ public class KafkaOperatorTest {
     verify(kafkaAdminMock, atLeast(1)).deleteTopic(deletedTopic.getName());
     verify(kafkaAdminMock, atMost(1)).deleteTopic(deletedTopic.getName());
   }
-  
+
+  @Test
+  public void testDeleteTopicUnallowed() throws Throwable {
+    // Arrange
+    config.setEnableTopicDelete(false);
+
+    Topic deletedTopic = new Topic("test-topic", 1, (short)1, Collections.singletonMap("retention.ms", "3600000"),
+        false);
+
+    // Act
+    emitDelete(operator, deletedTopic.getName());
+
+    // Assert
+    verify(kafkaAdminMock, atLeast(0)).deleteTopic(deletedTopic.getName());
+    verify(kafkaAdminMock, atMost(0)).deleteTopic(deletedTopic.getName());
+  }
+
+
 
   private void emitCreate(KafkaOperator operator, Topic topic) throws Throwable {
     AbstractTopicWatcher watcher = WhiteboxUtil.readField(operator, "topicWatcher");
@@ -250,7 +269,7 @@ public class KafkaOperatorTest {
     AbstractTopicWatcher watcher = WhiteboxUtil.readField(operator, "topicWatcher");
     WhiteboxUtil.runMethod(AbstractTopicWatcher.class, "emitDelete", String.class, watcher, topic);
   }
-  
+
   private TopicDescription buildTopicDescription(Topic topic) {
     return buildTopicDescription(topic.getName(), topic.getPartitions(), topic.getReplicationFactor());
   }
@@ -267,7 +286,7 @@ public class KafkaOperatorTest {
         .collect(Collectors.toList());
     return new TopicDescription(name, false, topicPartitions);
   }
-  
+
   private Config buildTopicConfig(Topic topic) {
     return buildTopicConfig(topic.getProperties());
   }

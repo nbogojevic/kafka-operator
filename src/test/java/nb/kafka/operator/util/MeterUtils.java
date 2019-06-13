@@ -8,7 +8,7 @@ import io.micrometer.core.instrument.Meter;
 public final class MeterUtils {
   private MeterUtils() {
   }
-  
+
   public static <T extends Meter> Optional<T> filterMeterByTags(Collection<T> meters, String... tags) {
     return meters.stream().filter((meter) -> {
       Meter.Id id = meter.getId();

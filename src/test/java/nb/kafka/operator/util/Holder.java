@@ -5,7 +5,7 @@ public class Holder<T> {
 
   public Holder() {
   }
-  
+
   public Holder(T holded) {
     this.holded = holded;
   }

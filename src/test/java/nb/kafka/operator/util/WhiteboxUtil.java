@@ -24,7 +24,7 @@ public final class WhiteboxUtil {
   public static <T, R> R runMethod(T object, String methodName, Class<?>[] argTypes, Object... args) throws Throwable {
     return runMethod(object.getClass(), methodName, argTypes, object, args);
   }
-  
+
   @SuppressWarnings("unchecked")
   public static <T, R> R runMethod(Class<?> clazz, String methodName, Class<?>[] argTypes, T object, Object... args) throws Throwable {
     Method method = clazz.getDeclaredMethod(methodName, argTypes);
@@ -38,7 +38,7 @@ public final class WhiteboxUtil {
       throw e;
     }
   }
-  
+
   public static <T, R> R runMethod(Class<?> clazz, String methodName, Class<?> argType, T object, Object... args) throws Throwable {
     return runMethod(clazz, methodName, new Class<?>[] { argType }, object, args);
   }

@@ -28,7 +28,7 @@ public class KafkaOperator {
   private final TopicImporter topicImporter;
   private final AclManager aclManager;
   private final MeterManager meterManager;
-
+  private final AppConfig config;
   private final ManagedTopicList managedTopics;
 
   private State operatorState;
@@ -44,6 +44,7 @@ public class KafkaOperator {
   public KafkaOperator(AppConfig config, KubernetesClient kubeClient, KafkaAdmin kafkaAdmin, ConfigMapWatcher watcher,
       MeterManager meterManager) {
     try {
+      this.config = config;
       this.kubeClient = kubeClient;
 
       this.topicManager = new TopicManager(kafkaAdmin, config);
@@ -112,8 +113,6 @@ public class KafkaOperator {
   }
 
   private void manageTopic(Topic topic) {
-    managedTopics.add(topic);
-
     log.debug("Requested update for {}", topic.getName());
 
     try {
@@ -121,6 +120,7 @@ public class KafkaOperator {
         doUpdateTopic(topic);
       } else {
         NewTopic nt = topicManager.createTopic(topic);
+        managedTopics.add(topic);
         log.info("Created topic. name: {}, partitions: {}, replFactor: {}, properties: {}", nt.name(),
             nt.numPartitions(), nt.replicationFactor(), topic.getProperties());
       }
@@ -133,9 +133,13 @@ public class KafkaOperator {
   }
 
   public void deleteTopic(String topicName) {
-    managedTopics.delete(topicName);
+    if (!config.isEnabledTopicDelete()) {
+      return;
+    }
+
     try {
       topicManager.deleteTopic(topicName);
+      managedTopics.delete(topicName);
     } catch (InterruptedException | ExecutionException e) {
       log.error("Exception occured during topic deletion. name: {}", topicName, e);
     }

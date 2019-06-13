@@ -37,7 +37,7 @@ public class ConfigMapWatcherTest {
   void setUp() {
     server = new KubernetesServer();
     server.before();
-    
+
     appConfig = AppConfig.defaultConfig();
     appConfig.setKafkaUrl("localhost:9092");
 
@@ -149,7 +149,7 @@ public class ConfigMapWatcherTest {
       });
       configMapWatcher.watch();
       assertTrue(crudLatch.await(10, TimeUnit.SECONDS));
-      
+
       Topic toUpdateTopic = holder.get();
       assertNotNull(toUpdateTopic);
       assertEquals(topicName, toUpdateTopic.getName());
@@ -187,7 +187,7 @@ public class ConfigMapWatcherTest {
       });
       configMapWatcher.watch();
       assertTrue(crudLatch.await(10, TimeUnit.SECONDS));
-      
+
       String toDeleteTopic = holder.get();
       assertNotNull(toDeleteTopic);
       assertEquals(topicName, toDeleteTopic);
@@ -250,13 +250,13 @@ public class ConfigMapWatcherTest {
       assertEquals(replicationFactor, topic.getReplicationFactor());
     }
   }
-  
+
   private ConfigMap makeConfigMap(String topicName, int partitions, short replicationFactor, long retentionTime) {
     Map<String, String> data = new HashMap<>();
     data.put("partitions", Integer.toString(partitions));
     data.put("properties", "retention.ms=" + retentionTime);
     data.put("replication-factor", Integer.toString(replicationFactor));
-    
+
     ObjectMeta metadata = new ObjectMeta();
     metadata.setName(topicName);
 

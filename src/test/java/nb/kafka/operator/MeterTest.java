@@ -35,7 +35,7 @@ public class MeterTest {
     // make the test runnable without an Internet connection
     stopHttpEndpoint = App.setupPrometheusRegistry(config.getPrometheusEndpointPort());
     config.setKafkaUrl("localhost:9092");
-    
+
     meterMgr = new MeterManager(new SimpleMeterRegistry());
   }
 
@@ -61,7 +61,7 @@ public class MeterTest {
 
     connection.setDoOutput(true);
     connection.connect();
-    
+
     // Assert
     try (Scanner scanner = new Scanner(connection.getInputStream(), "UTF-8")) {
       scanner.useDelimiter("\\A");
@@ -73,7 +73,7 @@ public class MeterTest {
       assertNotEquals(0, result.length());
     }
   }
-  
+
   @Test
   public void testTopicMetrics() throws Throwable {
     // Arrange

@@ -96,7 +96,7 @@ class KafkaAdminImplTest {
   }
 
   @Test
-  void createPartitions() throws  Exception{
+  void createPartitionsTest() throws  Exception{
 
     String topicName = "partitions-created";
     int partitions = 3;
@@ -112,7 +112,7 @@ class KafkaAdminImplTest {
   }
 
   @Test
-  void alterConfigs() throws Exception {
+  void alterConfigsTest() throws Exception {
 
     String topicName = "topic-to-be-updated";
     int partitions = 3;

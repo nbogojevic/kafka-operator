@@ -40,7 +40,7 @@ public class KafkaOperator {
     App.start("kafka.operator");
     AppConfig config = loadConfig();
 
-    HealthServer.start();
+    HealthServer.start(config);
 
     KafkaOperator operator = new KafkaOperator(config);
     if (config.isEnabledTopicImport()) {

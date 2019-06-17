@@ -11,6 +11,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<main.class>nb.kafka.operator.Main</main.class>
 		<version.kafka>1.0.0</version.kafka>
 		<version.logback>1.2.3</version.logback>
 		<version.metrics>3.2.3</version.metrics>
@@ -47,7 +48,7 @@
 					<archive>
 						<manifest>
 							<addClasspath>true</addClasspath>
-							<mainClass>nb.kafka.operator.KafkaOperator</mainClass>
+							<mainClass>${main.class}</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
@@ -64,7 +65,7 @@
 					<!-- MainClass in manifest make a executable jar -->
 					<archive>
 						<manifest>
-							<mainClass>nb.kafka.operator.KafkaOperator</mainClass>
+							<mainClass>${main.class}</mainClass>
 						</manifest>
 					</archive>
 
@@ -154,7 +155,7 @@
 									<build>
 										<from>fabric8/s2i-java</from>
 										<env>
-											<JAVA_MAIN_CLASS>nb.kafka.operator.KafkaOperator</JAVA_MAIN_CLASS>
+											<JAVA_MAIN_CLASS>${main.class}</JAVA_MAIN_CLASS>
 										</env>
 										<assembly>
 											<targetDir>/</targetDir>
@@ -220,11 +221,6 @@
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 			<version>${version.logback}</version>
-		</dependency>
-		<dependency>
-			<groupId>io.dropwizard.metrics</groupId>
-			<artifactId>metrics-core</artifactId>
-			<version>${version.metrics}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.prometheus.jmx</groupId>
@@ -298,7 +294,7 @@
 			<groupId>io.prometheus</groupId>
 			<artifactId>simpleclient_httpserver</artifactId>
 			<version>${prometheus.http.version}</version>
-		</dependency>
+        </dependency>
         <!-- Declare kafka-junit5 dependency -->
         <dependency>
             <groupId>com.salesforce.kafka.test</groupId>

@@ -19,6 +19,7 @@ public class AppConfig {
   private String consumedUsersSecretName;
   private Map<String, String> standardAclLabels;
   private int prometheusEndpointPort;
+  private int kafkaTimeoutMs;
 
   private static AppConfig defaultConfig;
   public static final AppConfig defaultConfig() {
@@ -36,6 +37,7 @@ public class AppConfig {
       conf.consumedUsersSecretName = "kafka-cluster-kafka-consumed-auth-pool";
       conf.standardAclLabels = new HashMap<>();
       conf.prometheusEndpointPort = 9999;
+      conf.kafkaTimeoutMs = 30000;
       defaultConfig = conf;
     }
     return defaultConfig;
@@ -113,6 +115,12 @@ public class AppConfig {
   public void setPrometheusEndpointPort(int prometheusEndpointPort) {
     this.prometheusEndpointPort = prometheusEndpointPort;
   }
+  public int getKafkaTimeoutMs() {
+    return kafkaTimeoutMs;
+  }
+  public void setKafkaTimeoutMs(int kafkaTimeoutMs) {
+    this.kafkaTimeoutMs = kafkaTimeoutMs;
+  }
 
   @Override
   public String toString() {
@@ -121,6 +129,6 @@ public class AppConfig {
         + enableTopicImport + ", enableAclManagement=" + enableAclManagement + ", operatorId=" + operatorId
         + ", standardLabels=" + standardLabels + ", usernamePoolSecretName=" + usernamePoolSecretName
         + ", consumedUsersSecretName=" + consumedUsersSecretName + ", standardAclLabels=" + standardAclLabels
-        + ", prometheusEndpointPort=" + prometheusEndpointPort + "]";
+        + ", prometheusEndpointPort=" + prometheusEndpointPort + ", kafkaTimeoutMs=" + kafkaTimeoutMs + "]";
   }
 }

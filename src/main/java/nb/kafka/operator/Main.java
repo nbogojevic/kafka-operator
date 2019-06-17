@@ -1,4 +1,4 @@
-package nb.common;
+package nb.kafka.operator;
 
 import static nb.kafka.operator.util.PropertyUtil.getSystemPropertyOrEnvVar;
 import static nb.kafka.operator.util.PropertyUtil.isBlank;
@@ -16,19 +16,18 @@ import io.micrometer.jmx.JmxMeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.prometheus.client.exporter.HTTPServer;
-import nb.kafka.operator.AppConfig;
-import nb.kafka.operator.KafkaOperator;
 import nb.kafka.operator.util.PropertyUtil;
 
-public final class App {
+public final class Main {
 
-  private static final Logger log = LoggerFactory.getLogger(App.class);
+  private static final Logger log = LoggerFactory.getLogger(Main.class);
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws IOException {
     AppConfig config = loadConfig();
     setupJmxRegistry(config.getOperatorId());
     Runnable stopHttpServer = setupPrometheusRegistry(config.getPrometheusEndpointPort());
 
+    HealthServer.start(config);
     KafkaOperator operator = new KafkaOperator(config);
 
     Runtime.getRuntime().addShutdownHook(new Thread(operator::shutdown));
@@ -66,6 +65,7 @@ public final class App {
         getSystemPropertyOrEnvVar("consumed.usernames.secret", defaultConfig.getConsumedUsersSecretName()));
     config.setPrometheusEndpointPort(
         getSystemPropertyOrEnvVar("prometheus.port", defaultConfig.getPrometheusEndpointPort()));
+    config.setKafkaTimeoutMs(getSystemPropertyOrEnvVar("kafka.timeout.ms", defaultConfig.getKafkaTimeoutMs()));
 
     log.debug("Loaded config, {}", config);
     return config;

@@ -34,7 +34,7 @@ public class KafkaOperator {
   private State operatorState;
 
   public KafkaOperator(AppConfig config) {
-    this(config, new DefaultKubernetesClient(), new KafkaAdminImpl(config.getKafkaUrl(), config.getSecurityProtocol()));
+    this(config, new DefaultKubernetesClient(), new KafkaAdminImpl(config));
   }
 
   public KafkaOperator(AppConfig config, KubernetesClient kubeClient, KafkaAdmin kafkaAdmin) {

@@ -4,12 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-import nb.common.App;
-
 public class AppTest {
   @Test
   void testOperatorStart() throws Exception {
-    AppConfig config = App.loadConfig();
+    AppConfig config = Main.loadConfig();
     AppConfig defaultConfig = AppConfig.defaultConfig();
 
     assertEquals(defaultConfig.getKafkaUrl(), config.getKafkaUrl());

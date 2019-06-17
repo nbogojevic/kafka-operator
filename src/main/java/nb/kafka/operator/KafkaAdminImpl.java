@@ -35,12 +35,13 @@ public class KafkaAdminImpl implements KafkaAdmin {
 
   private final AdminClient client;
 
-  public KafkaAdminImpl(String kafkaUrl, String securityProtocol) {
+  public KafkaAdminImpl(AppConfig config) {
     Properties conf = new Properties();
-    conf.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl);
-    if (!isBlank(securityProtocol)) {
-      log.info("Using security protocol {}.", securityProtocol);
-      conf.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, securityProtocol);
+    conf.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.getKafkaUrl());
+    conf.setProperty(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, Integer.toString(config.getKafkaTimeoutMs()));
+    if (!isBlank(config.getSecurityProtocol())) {
+      log.info("Using security protocol {}.", config.getSecurityProtocol());
+      conf.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, config.getSecurityProtocol());
       conf.setProperty(SaslConfigs.SASL_MECHANISM, "PLAIN");
     }
     this.client = AdminClient.create(conf);

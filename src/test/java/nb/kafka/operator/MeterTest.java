@@ -20,7 +20,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import nb.common.App;
 import nb.kafka.operator.util.MeterManager;
 import nb.kafka.operator.util.MeterUtils;
 import nb.kafka.operator.watch.ConfigMapWatcher;
@@ -33,7 +32,7 @@ public class MeterTest {
   @BeforeEach
   void setUp() {
     // make the test runnable without an Internet connection
-    stopHttpEndpoint = App.setupPrometheusRegistry(config.getPrometheusEndpointPort());
+    stopHttpEndpoint = Main.setupPrometheusRegistry(config.getPrometheusEndpointPort());
     config.setKafkaUrl("localhost:9092");
 
     meterMgr = new MeterManager(new SimpleMeterRegistry());

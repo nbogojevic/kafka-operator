@@ -45,8 +45,8 @@ public class ConfigMapWatcher extends KubernetesWatcher<ConfigMap> {
   protected Topic buildTopicModel(ConfigMap cm) {
     try {
       return new Topic(getProperty(cm.getData(), TOPIC_NAME_KEY, cm.getMetadata().getName()),
-                       getProperty(cm.getData(), PARTITIONS_KEY, 0),
-                       getProperty(cm.getData(), REPLICATION_FACTOR_KEY, (short)0),
+                       getProperty(cm.getData(), PARTITIONS_KEY, -1),
+                       getProperty(cm.getData(), REPLICATION_FACTOR_KEY, (short)-1),
                        propertiesFromString(getProperty(cm.getData(), PROPERTIES_KEY, "")),
                        getProperty(cm.getData(), ACL_KEY, false));
     } catch (IOException e) {

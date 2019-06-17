@@ -11,12 +11,13 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<main.class>nb.kafka.operator.Main</main.class>
 		<version.kafka>1.0.0</version.kafka>
 		<version.logback>1.2.3</version.logback>
 		<version.metrics>3.2.3</version.metrics>
 		<version.fabric8.k8s.client>3.0.1</version.fabric8.k8s.client>
 		<version.fabric8.openshift.client>3.0.3</version.fabric8.openshift.client>
-		<version.prometheus.exproter>0.1.0</version.prometheus.exproter>
+		<version.prometheus.exporter>0.1.0</version.prometheus.exporter>
 		<fabric8.mode>kubernetes</fabric8.mode>
 		<mockito.version>2.23.4</mockito.version>
 		<maven-surefire-plugin.version>2.22.1</maven-surefire-plugin.version>
@@ -24,6 +25,8 @@
 		<maven-assembly-plugin.version>3.1.0</maven-assembly-plugin.version>
 		<kube.mock.version>3.0.1</kube.mock.version>
 		<http.mock.version>0.0.12</http.mock.version>
+		<prometheus.http.version>0.6.0</prometheus.http.version>
+		<micrometer.version>1.1.1</micrometer.version>
 	</properties>
 
 	<build>
@@ -45,7 +48,7 @@
 					<archive>
 						<manifest>
 							<addClasspath>true</addClasspath>
-							<mainClass>nb.kafka.operator.KafkaOperator</mainClass>
+							<mainClass>${main.class}</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
@@ -59,10 +62,10 @@
 					<descriptorRefs>
 						<descriptorRef>jar-with-dependencies</descriptorRef>
 					</descriptorRefs>
-					<!-- MainClass in mainfest make a executable jar -->
+					<!-- MainClass in manifest make a executable jar -->
 					<archive>
 						<manifest>
-							<mainClass>nb.kafka.operator.KafkaOperator</mainClass>
+							<mainClass>${main.class}</mainClass>
 						</manifest>
 					</archive>
 
@@ -107,7 +110,7 @@
 							<goal>prepare-agent</goal>
 						</goals>
 					</execution>
-                    <!-- attached to Maven test phase -->
+					<!-- attached to Maven test phase -->
 					<execution>
 						<id>report</id>
 						<phase>test</phase>
@@ -152,7 +155,7 @@
 									<build>
 										<from>fabric8/s2i-java</from>
 										<env>
-											<JAVA_MAIN_CLASS>nb.kafka.operator.KafkaOperator</JAVA_MAIN_CLASS>
+											<JAVA_MAIN_CLASS>${main.class}</JAVA_MAIN_CLASS>
 										</env>
 										<assembly>
 											<targetDir>/</targetDir>
@@ -220,14 +223,9 @@
 			<version>${version.logback}</version>
 		</dependency>
 		<dependency>
-			<groupId>io.dropwizard.metrics</groupId>
-			<artifactId>metrics-core</artifactId>
-			<version>${version.metrics}</version>
-		</dependency>
-		<dependency>
 			<groupId>io.prometheus.jmx</groupId>
 			<artifactId>jmx_prometheus_javaagent</artifactId>
-			<version>${version.prometheus.exproter}</version>
+			<version>${version.prometheus.exporter}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.fabric8</groupId>
@@ -277,6 +275,39 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-core</artifactId>
+			<version>${micrometer.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-jmx</artifactId>
+			<version>${micrometer.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+			<version>${micrometer.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.prometheus</groupId>
+			<artifactId>simpleclient_httpserver</artifactId>
+			<version>${prometheus.http.version}</version>
+        </dependency>
+        <!-- Declare kafka-junit5 dependency -->
+        <dependency>
+            <groupId>com.salesforce.kafka.test</groupId>
+            <artifactId>kafka-junit5</artifactId>
+            <version>3.1.1</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Include Kafka 2.0.x -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka_2.11</artifactId>
+            <version>${version.kafka}</version>
+            <scope>test</scope>
+        </dependency>
 	</dependencies>
-
 </project>

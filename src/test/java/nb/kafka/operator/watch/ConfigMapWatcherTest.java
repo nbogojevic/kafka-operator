@@ -1,5 +1,4 @@
 package nb.kafka.operator.watch;
-import static nb.common.App.metrics;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -9,6 +8,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.WatchEventBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.Watcher.Action;
 import io.fabric8.kubernetes.client.server.mock.KubernetesServer;
 import nb.kafka.operator.AppConfig;
 import nb.kafka.operator.Topic;
@@ -38,8 +39,8 @@ public class ConfigMapWatcherTest {
   void setUp() {
     server = new KubernetesServer();
     server.before();
-    
-    appConfig = new AppConfig();
+
+    appConfig = AppConfig.defaultConfig();
     appConfig.setKafkaUrl("localhost:9092");
 
     Map<String, String> standardLabels = Collections.singletonMap("config", "kafka-topic");
@@ -48,7 +49,6 @@ public class ConfigMapWatcherTest {
 
   @AfterEach
   void tearDown() {
-    metrics().remove("managed-topics");
     server.after();
     server = null;
   }
@@ -123,6 +123,45 @@ public class ConfigMapWatcherTest {
   }
 
   @Test
+  void testWatchConfigMapInvalidResource() throws InterruptedException {
+    String topicName = "__consumer-offsets";
+    int partitions = 20;
+    short replicationFactor = 3;
+    long retentionTime = 3600000L;
+
+    ConfigMap cm = makeConfigMap(topicName, partitions, replicationFactor, retentionTime);
+
+    KubernetesClient client = server.getClient();
+    CountDownLatch crudLatch = new CountDownLatch(1);
+
+    server.expect()
+        .withPath(WATCH_PATH)
+        .andUpgradeToWebSocket()
+        .open()
+        .waitFor(500)
+        .andEmit(new WatchEventBuilder().withConfigMapObject(cm).withType("ADDED").build())
+        .done()
+        .once();
+
+    try (ConfigMapWatcher configMapWatcher = new ConfigMapWatcher(client, appConfig)) {
+      configMapWatcher.setOnCreateListener((topic) -> {
+        crudLatch.countDown();
+      });
+      configMapWatcher.watch();
+      assertFalse(crudLatch.await(1, TimeUnit.SECONDS));
+    }
+
+    try (ConfigMapWatcher configMapWatcher = new ConfigMapWatcher(client, appConfig)) {
+      configMapWatcher.setOnCreateListener((topic) -> {
+        crudLatch.countDown();
+      });
+      configMapWatcher.eventReceived(Action.ADDED, null);
+
+      assertFalse(crudLatch.await(1, TimeUnit.SECONDS));
+    }
+  }
+
+  @Test
   void testWatchConfigMapUpdateTopic() throws InterruptedException {
     String topicName = "test-topic";
     int partitions = 20;
@@ -151,7 +190,7 @@ public class ConfigMapWatcherTest {
       });
       configMapWatcher.watch();
       assertTrue(crudLatch.await(10, TimeUnit.SECONDS));
-      
+
       Topic toUpdateTopic = holder.get();
       assertNotNull(toUpdateTopic);
       assertEquals(topicName, toUpdateTopic.getName());
@@ -189,7 +228,7 @@ public class ConfigMapWatcherTest {
       });
       configMapWatcher.watch();
       assertTrue(crudLatch.await(10, TimeUnit.SECONDS));
-      
+
       String toDeleteTopic = holder.get();
       assertNotNull(toDeleteTopic);
       assertEquals(topicName, toDeleteTopic);
@@ -237,10 +276,9 @@ public class ConfigMapWatcherTest {
     server.expect()
         .withPath("/api/v1/namespaces/test/configmaps?labelSelector=config%3Dkafka-topic")
         .andReturn(200, new ConfigMapListBuilder().addToItems(cm).build())
-        .once();
+        .always();
 
     try (ConfigMapWatcher configMapWatcher = new ConfigMapWatcher(client, appConfig)) {
-      // Act
       List<Topic> topics = configMapWatcher.listTopics();
       assertNotNull(topics);
       assertEquals(1, topics.size());
@@ -250,15 +288,20 @@ public class ConfigMapWatcherTest {
       assertEquals(topicName, topic.getName());
       assertEquals(partitions, topic.getPartitions());
       assertEquals(replicationFactor, topic.getReplicationFactor());
-    }
+
+      Set<String> topicNames = configMapWatcher.listTopicNames();
+      assertNotNull(topicNames);
+      assertEquals(1, topics.size());
+      assertEquals(topicNames.iterator().next(), topic.getName());
+     }
   }
-  
+
   private ConfigMap makeConfigMap(String topicName, int partitions, short replicationFactor, long retentionTime) {
     Map<String, String> data = new HashMap<>();
     data.put("partitions", Integer.toString(partitions));
     data.put("properties", "retention.ms=" + retentionTime);
     data.put("replication-factor", Integer.toString(replicationFactor));
-    
+
     ObjectMeta metadata = new ObjectMeta();
     metadata.setName(topicName);
 

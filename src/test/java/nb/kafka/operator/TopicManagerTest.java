@@ -52,6 +52,34 @@ public class TopicManagerTest {
   }
 
   @Test
+  public void testCreateTopicDefault() throws InterruptedException, ExecutionException, TopicCreationException {
+    // Arrange
+    String name = "test-topic";
+    int numberOfBrokers = 3;
+    short replicationFactor = 1;
+    Topic topic = new Topic(name, -1, (short)-1, null, false);
+
+    KafkaAdmin kafkaAdmin = mock(KafkaAdmin.class);
+    when(kafkaAdmin.createTopic(any())).thenReturn(1);
+    when(kafkaAdmin.numberOfBrokers()).thenReturn(numberOfBrokers);
+
+    AppConfig config = new AppConfig();
+    config.setDefaultReplicationFactor(replicationFactor);
+    TopicManager topicManager = new TopicManager(kafkaAdmin, config);
+
+    // Act
+    NewTopic newTopic = topicManager.createTopic(topic);
+
+    // Assert
+    verify(kafkaAdmin).createTopic(any());
+    verify(kafkaAdmin).numberOfBrokers();
+
+    assertEquals(name, newTopic.name());
+    assertEquals(numberOfBrokers, newTopic.numPartitions());
+    assertEquals(replicationFactor, newTopic.replicationFactor());
+  }
+
+  @Test
   public void testUpdateTopic() throws InterruptedException, ExecutionException {
     // Arrange
     String topicName = "test-topic";

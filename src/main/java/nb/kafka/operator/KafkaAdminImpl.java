@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.kafka.clients.admin.AdminClient;
@@ -36,12 +35,13 @@ public class KafkaAdminImpl implements KafkaAdmin {
 
   private final AdminClient client;
 
-  public KafkaAdminImpl(String kafkaUrl, String securityProtocol) {
+  public KafkaAdminImpl(AppConfig config) {
     Properties conf = new Properties();
-    conf.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl);
-    if (!isBlank(securityProtocol)) {
-      log.info("Using security protocol {}.", securityProtocol);
-      conf.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, securityProtocol);
+    conf.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.getKafkaUrl());
+    conf.setProperty(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, Integer.toString(config.getKafkaTimeoutMs()));
+    if (!isBlank(config.getSecurityProtocol())) {
+      log.info("Using security protocol {}.", config.getSecurityProtocol());
+      conf.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, config.getSecurityProtocol());
       conf.setProperty(SaslConfigs.SASL_MECHANISM, "PLAIN");
     }
     this.client = AdminClient.create(conf);
@@ -80,14 +80,6 @@ public class KafkaAdminImpl implements KafkaAdmin {
     dt.all().get();
     return dt.values().get(topicName).get();
   }
-
-  @Override
-  public Set<String> listTopics(int timeout, TimeUnit unit)
-      throws InterruptedException, ExecutionException, TimeoutException {
-    KafkaFuture<Set<String>> names = client.listTopics().names();
-    KafkaFuture.allOf(names).get(timeout, unit);
-    return names.get();
-   }
 
   @Override
   public Set<String> listTopics() throws InterruptedException, ExecutionException, TimeoutException {

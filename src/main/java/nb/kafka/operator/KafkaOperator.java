@@ -1,9 +1,5 @@
 package nb.kafka.operator;
 
-import static nb.common.App.metrics;
-import static nb.kafka.operator.util.PropertyUtil.getSystemPropertyOrEnvVar;
-import static nb.kafka.operator.util.PropertyUtil.isBlank;
-
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -12,14 +8,12 @@ import org.apache.kafka.common.errors.TopicExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.MetricRegistry;
-
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import nb.common.App;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.micrometer.core.instrument.Gauge;
 import nb.kafka.operator.importer.ConfigMapImporter;
 import nb.kafka.operator.importer.TopicImporter;
-import nb.kafka.operator.util.PropertyUtil;
+import nb.kafka.operator.util.MeterManager;
 import nb.kafka.operator.watch.ConfigMapWatcher;
 import nb.kafka.operator.watch.TopicWatcher;
 
@@ -28,93 +22,79 @@ public class KafkaOperator {
 
   public static final short DEFAULT_REPLICATION_FACTOR = 2;
 
-  private final DefaultKubernetesClient kubeClient;
+  private final KubernetesClient kubeClient;
   private final TopicManager topicManager;
   private final TopicWatcher topicWatcher;
   private final TopicImporter topicImporter;
   private final AclManager aclManager;
-  private final ManagedTopics managedTopics;
+  private final MeterManager meterManager;
+  private final AppConfig config;
+  private final ManagedTopicList managedTopics;
 
-  public static void main(String[] args) {
-    App.start("kafka.operator");
-    AppConfig config = loadConfig();
-
-    KafkaOperator operator = new KafkaOperator(config);
-    if (config.isEnabledTopicImport()) {
-      log.debug("Importing topics");
-      operator.topicImporter.importTopics();
-    }
-    operator.watch();
-    log.info("Operator {} started: Managing cluster {}", config.getOperatorId(), config.getKafkaUrl());
-  }
-
-  public static AppConfig loadConfig() {
-    AppConfig config = new AppConfig();
-
-    config.setKafkaUrl(getSystemPropertyOrEnvVar("bootstrap.server", "kafka:9092"));
-    config.setOperatorId(getSystemPropertyOrEnvVar("operator.id", "kafka-operator"));
-    config.setDefaultReplicationFactor(
-        getSystemPropertyOrEnvVar("default.replication.factor", DEFAULT_REPLICATION_FACTOR));
-    config.setEnableTopicImport(getSystemPropertyOrEnvVar("import.topics", true));
-    config.setEnableAclManagement(getSystemPropertyOrEnvVar("enable.acl", false));
-    config.setSecurityProtocol(getSystemPropertyOrEnvVar("security.protocol", ""));
-    if (config.isEnabledAclManagement() && isBlank(config.getSecurityProtocol())) {
-      config.setSecurityProtocol("SASL_PLAINTEXT");
-      log.warn("ACL was enabled, but not security.protocol, forcing security protocol to {}",
-          config.getSecurityProtocol());
-    }
-    config.setStandardLabels(PropertyUtil.stringToMap(getSystemPropertyOrEnvVar("standard.labels", "")));
-    config.setStandardAclLabels(PropertyUtil.stringToMap(getSystemPropertyOrEnvVar("standard.acl.labels", "")));
-    config
-        .setUsernamePoolSecretName(getSystemPropertyOrEnvVar("username.pool.secret", "kafka-cluster-kafka-auth-pool"));
-    config.setConsumedUsersSecretName(
-        getSystemPropertyOrEnvVar("consumed.usernames.secret", "kafka-cluster-kafka-consumed-auth-pool"));
-
-    log.debug("Loaded config, {}", config);
-    return config;
-  }
+  private State operatorState;
 
   public KafkaOperator(AppConfig config) {
-    kubeClient = new DefaultKubernetesClient();
-
-    KafkaAdmin ka = new KafkaAdminImpl(config.getKafkaUrl(), config.getSecurityProtocol());
-    topicManager = new TopicManager(ka, config);
-    aclManager = config.isEnabledAclManagement() ? new AclManager(kubeClient, config) : null;
-
-    ConfigMapWatcher cmTopicWatcher = new ConfigMapWatcher(kubeClient, config);
-    cmTopicWatcher.setOnCreateListener(this::createTopic);
-    cmTopicWatcher.setOnUpdateListener(this::updateTopic);
-    cmTopicWatcher.setOnDeleteListener(this::deleteTopic);
-    topicWatcher = cmTopicWatcher;
-
-    topicImporter = new ConfigMapImporter(kubeClient, cmTopicWatcher, topicManager, config);
-    managedTopics = new ManagedTopics();
-    App.registerMBean(managedTopics, "kafka.operator:type=ManagedTopics");
-    metrics().register(MetricRegistry.name("managed-topics"), new Gauge<Integer>() {
-      @Override
-      public Integer getValue() {
-        return managedTopics.size();
-      }
-    });
-    Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
+    this(config, new DefaultKubernetesClient(), new KafkaAdminImpl(config));
   }
 
-  public DefaultKubernetesClient kubeClient() {
+  public KafkaOperator(AppConfig config, KubernetesClient kubeClient, KafkaAdmin kafkaAdmin) {
+    this(config, kubeClient, kafkaAdmin, new ConfigMapWatcher(kubeClient, config), MeterManager.defaultMeterManager());
+  }
+
+  public KafkaOperator(AppConfig config, KubernetesClient kubeClient, KafkaAdmin kafkaAdmin, ConfigMapWatcher watcher,
+      MeterManager meterManager) {
+    try {
+      this.config = config;
+      this.kubeClient = kubeClient;
+
+      this.topicManager = new TopicManager(kafkaAdmin, config);
+      this.aclManager = config.isEnabledAclManagement() ? new AclManager(meterManager, kubeClient, config) : null;
+
+      watcher.setOnCreateListener(this::createTopic);
+      watcher.setOnUpdateListener(this::updateTopic);
+      watcher.setOnDeleteListener(this::deleteTopic);
+      this.topicWatcher = watcher;
+
+      this.topicImporter = new ConfigMapImporter(kubeClient, watcher, topicManager, config);
+
+      this.meterManager = meterManager;
+      this.managedTopics = new ManagedTopicList(meterManager, config, topicWatcher.listTopics());
+
+      this.operatorState = State.CREATED;
+      meterManager.register(Gauge.builder("operator.state", operatorState::ordinal));
+    } catch (Throwable t) {
+      this.operatorState = State.FAILED;
+      throw t;
+    }
+  }
+
+  public KubernetesClient kubeClient() {
     return kubeClient;
   }
 
-  private void shutdown() {
-    topicWatcher.close();
-    if (aclManager != null) {
-      aclManager.close();
+  public void shutdown() {
+    try {
+      topicWatcher.close();
+      if (aclManager != null) {
+        aclManager.close();
+      }
+      meterManager.close();
+      kubeClient.close();
+    } finally {
+      operatorState = State.STOPPED;
     }
-    kubeClient.close();
   }
 
-  private void watch() {
-    topicWatcher.watch();
-    if (aclManager != null) {
-      aclManager.watch();
+  public void watch() {
+    try {
+      topicWatcher.watch();
+      if (aclManager != null) {
+        aclManager.watch();
+      }
+      operatorState = State.RUNNING;
+    } catch (Throwable t) {
+      operatorState = State.FAILED;
+      throw t;
     }
   }
 
@@ -126,9 +106,11 @@ public class KafkaOperator {
     manageTopic(topic);
   }
 
-  private void manageTopic(Topic topic) {
-    managedTopics.add(topic);
+  public void importTopics() {
+    topicImporter.importTopics();
+  }
 
+  private void manageTopic(Topic topic) {
     log.debug("Requested update for {}", topic.getName());
 
     try {
@@ -136,6 +118,7 @@ public class KafkaOperator {
         doUpdateTopic(topic);
       } else {
         NewTopic nt = topicManager.createTopic(topic);
+        managedTopics.add(topic);
         log.info("Created topic. name: {}, partitions: {}, replFactor: {}, properties: {}", nt.name(),
             nt.numPartitions(), nt.replicationFactor(), topic.getProperties());
       }
@@ -148,9 +131,13 @@ public class KafkaOperator {
   }
 
   public void deleteTopic(String topicName) {
-    managedTopics.delete(topicName);
+    if (!config.isEnabledTopicDelete()) {
+      return;
+    }
+
     try {
       topicManager.deleteTopic(topicName);
+      managedTopics.delete(topicName);
     } catch (InterruptedException | ExecutionException e) {
       log.error("Exception occured during topic deletion. name: {}", topicName, e);
     }
@@ -162,5 +149,13 @@ public class KafkaOperator {
     } catch (InterruptedException | ExecutionException e) {
       log.error("Exception occured during topic update. name {}", topic.getName(), e);
     }
+  }
+
+  public enum State {
+    CREATED, RUNNING, STOPPED, FAILED
+  }
+
+  public State getState() {
+    return operatorState;
   }
 }

@@ -18,6 +18,8 @@ public class AppConfig {
   private String usernamePoolSecretName;
   private String consumedUsersSecretName;
   private Map<String, String> standardAclLabels;
+  private int prometheusEndpointPort;
+  private int kafkaTimeoutMs;
 
   private static AppConfig defaultConfig;
   public static final AppConfig defaultConfig() {
@@ -34,11 +36,13 @@ public class AppConfig {
       conf.usernamePoolSecretName = "kafka-cluster-kafka-auth-pool";
       conf.consumedUsersSecretName = "kafka-cluster-kafka-consumed-auth-pool";
       conf.standardAclLabels = new HashMap<>();
+      conf.prometheusEndpointPort = 9999;
+      conf.kafkaTimeoutMs = 30000;
       defaultConfig = conf;
     }
     return defaultConfig;
   }
-  
+
   public String getKafkaUrl() {
     return kafkaUrl;
   }
@@ -105,12 +109,26 @@ public class AppConfig {
   public void setStandardAclLabels(Map<String, String> standardAclLabels) {
     this.standardAclLabels = standardAclLabels;
   }
+  public int getPrometheusEndpointPort() {
+    return prometheusEndpointPort;
+  }
+  public void setPrometheusEndpointPort(int prometheusEndpointPort) {
+    this.prometheusEndpointPort = prometheusEndpointPort;
+  }
+  public int getKafkaTimeoutMs() {
+    return kafkaTimeoutMs;
+  }
+  public void setKafkaTimeoutMs(int kafkaTimeoutMs) {
+    this.kafkaTimeoutMs = kafkaTimeoutMs;
+  }
+
   @Override
   public String toString() {
     return "AppConfig [kafkaUrl=" + kafkaUrl + ", securityProtocol=" + securityProtocol + ", defaultReplicationFactor="
         + defaultReplicationFactor + ", enableTopicDelete=" + enableTopicDelete + ", enableTopicImport="
         + enableTopicImport + ", enableAclManagement=" + enableAclManagement + ", operatorId=" + operatorId
         + ", standardLabels=" + standardLabels + ", usernamePoolSecretName=" + usernamePoolSecretName
-        + ", consumedUsersSecretName=" + consumedUsersSecretName + ", standardAclLabels=" + standardAclLabels + "]";
+        + ", consumedUsersSecretName=" + consumedUsersSecretName + ", standardAclLabels=" + standardAclLabels
+        + ", prometheusEndpointPort=" + prometheusEndpointPort + ", kafkaTimeoutMs=" + kafkaTimeoutMs + "]";
   }
 }

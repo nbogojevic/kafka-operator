@@ -1,7 +1,5 @@
 package nb.kafka.operator;
 
-import static nb.common.App.metrics;
-
 import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
@@ -16,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.clients.admin.AdminClient;
@@ -34,9 +33,6 @@ import org.apache.kafka.common.resource.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.MetricRegistry;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Initializer;
 import io.fabric8.kubernetes.api.model.OwnerReference;
@@ -44,11 +40,13 @@ import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
+import io.micrometer.core.instrument.Gauge;
 import nb.kafka.operator.importer.AbstractTopicImporter;
+import nb.kafka.operator.util.MeterManager;
 import nb.kafka.operator.util.PropertyUtil;
 
 public class AclManager implements Closeable {
@@ -59,17 +57,19 @@ public class AclManager implements Closeable {
   private String usernamePoolSecretName;
   private String consumedUsersSecretName;
   private final boolean useInitializers;
-  private int userPoolAvailable;
+  private AtomicInteger userPoolAvailable;
   private Watch watch;
   private final AppConfig config;
   private final AdminClient adminClient;
-  private final DefaultKubernetesClient kubeClient;
+  private final KubernetesClient kubeClient;
+  private final MeterManager meterManager;
 
 
-  public AclManager(DefaultKubernetesClient kubeClient, AppConfig config) {
+  public AclManager(MeterManager meterMgr, KubernetesClient kubeClient, AppConfig config) {
     super();
     this.config = config;
     this.kubeClient = kubeClient;
+    this.meterManager = meterMgr;
     this.useInitializers = false;
 
     Properties conf = new Properties();
@@ -81,15 +81,11 @@ public class AclManager implements Closeable {
     }
     this.adminClient = AdminClient.create(conf);
 
-    this.userPoolAvailable = 100;
+    this.userPoolAvailable = new AtomicInteger(100);
     this.usernamePoolSecretName = config.getUsernamePoolSecretName();
     this.consumedUsersSecretName = config.getConsumedUsersSecretName();
-    metrics().register(MetricRegistry.name("username-pool"), new Gauge<Integer>() {
-      @Override
-      public Integer getValue() {
-          return userPoolAvailable;
-      }
-    });
+
+    this.meterManager.register(Gauge.builder("username-pool", userPoolAvailable::get));
   }
 
   public Secret createSecret(HasMetadata owner, Map<String, String> values) {
@@ -191,7 +187,7 @@ public class AclManager implements Closeable {
     Map<String, String> usernamePool = decodeMap(usernamePoolSecret.getData().get("username-pool"));
     Collection<String> consumedUsernames = decodeList(consumedUsersSecret.getData().get("consumed-usernames"));
     // How much of the pool is used
-    userPoolAvailable = ((usernamePool.size() - consumedUsernames.size()) * 100) / usernamePool.size();
+    userPoolAvailable.set(((usernamePool.size() - consumedUsernames.size()) * 100) / usernamePool.size());
     // Remove all consumed usernames
     consumedUsernames.forEach(k -> usernamePool.remove(k));
     if (usernamePool.isEmpty()) {

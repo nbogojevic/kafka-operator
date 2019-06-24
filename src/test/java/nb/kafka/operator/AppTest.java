@@ -10,7 +10,7 @@ public class AppTest {
     AppConfig config = Main.loadConfig();
     AppConfig defaultConfig = AppConfig.defaultConfig();
 
-    assertEquals(defaultConfig.getKafkaUrl(), config.getKafkaUrl());
+    assertEquals(defaultConfig.getBootstrapServers(), config.getBootstrapServers());
 
     assertEquals(defaultConfig.getOperatorId(), config.getOperatorId());
     assertEquals(defaultConfig.getDefaultReplicationFactor(), config.getDefaultReplicationFactor());
@@ -18,7 +18,11 @@ public class AppTest {
     assertEquals(defaultConfig.isEnabledAclManagement(), config.isEnabledAclManagement());
     assertEquals(defaultConfig.getUsernamePoolSecretName(), config.getUsernamePoolSecretName());
     assertEquals(defaultConfig.getConsumedUsersSecretName(), config.getConsumedUsersSecretName());
-    assertEquals(defaultConfig.getPrometheusEndpointPort(), config.getPrometheusEndpointPort());
-
+    assertEquals(defaultConfig.getMetricsPort(), config.getMetricsPort());
+    assertEquals(defaultConfig.getHealthsPort(), config.getHealthsPort());
+    assertEquals(defaultConfig.getKafkaTimeoutMs(), config.getKafkaTimeoutMs());
+    assertEquals(defaultConfig.getMaxReplicationFactor(), config.getMaxReplicationFactor());
+    assertEquals(defaultConfig.getMaxPartitions(), config.getMaxPartitions());
+    assertEquals(defaultConfig.getMaxRetentionMs(), config.getMaxRetentionMs());
   }
 }

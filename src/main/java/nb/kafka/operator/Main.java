@@ -25,7 +25,7 @@ public final class Main {
   public static void main(String[] args) throws IOException {
     AppConfig config = loadConfig();
     setupJmxRegistry(config.getOperatorId());
-    Runnable stopHttpServer = setupPrometheusRegistry(config.getPrometheusEndpointPort());
+    Runnable stopHttpServer = setupPrometheusRegistry(config.getMetricsPort());
 
     HealthServer.start(config);
     KafkaOperator operator = new KafkaOperator(config);
@@ -38,19 +38,20 @@ public final class Main {
       operator.importTopics();
     }
     operator.watch();
-    log.info("Operator {} started: Managing cluster {}", config.getOperatorId(), config.getKafkaUrl());
+    log.info("Operator {} started: Managing cluster {}", config.getOperatorId(), config.getBootstrapServers());
   }
 
   public static AppConfig loadConfig() {
     AppConfig config = new AppConfig();
     AppConfig defaultConfig = AppConfig.defaultConfig();
 
-    config.setKafkaUrl(getSystemPropertyOrEnvVar("bootstrap.server", defaultConfig.getKafkaUrl()));
+    config.setBootstrapServers(getSystemPropertyOrEnvVar("bootstrap.servers", defaultConfig.getBootstrapServers()));
     config.setOperatorId(getSystemPropertyOrEnvVar("operator.id", defaultConfig.getOperatorId()));
     config.setDefaultReplicationFactor(
         getSystemPropertyOrEnvVar("default.replication.factor", defaultConfig.getDefaultReplicationFactor()));
-    config.setEnableTopicImport(getSystemPropertyOrEnvVar("import.topics", defaultConfig.isEnabledTopicImport()));
+    config.setEnableTopicImport(getSystemPropertyOrEnvVar("enable.topic.import", defaultConfig.isEnabledTopicImport()));
     config.setEnableAclManagement(getSystemPropertyOrEnvVar("enable.acl", defaultConfig.isEnabledAclManagement()));
+    config.setEnableTopicDelete(getSystemPropertyOrEnvVar("enable.topic.delete", defaultConfig.isEnabledTopicDelete()));
     config.setSecurityProtocol(getSystemPropertyOrEnvVar("security.protocol", ""));
     if (config.isEnabledAclManagement() && isBlank(config.getSecurityProtocol())) {
       config.setSecurityProtocol("SASL_PLAINTEXT");
@@ -63,9 +64,14 @@ public final class Main {
         getSystemPropertyOrEnvVar("username.pool.secret", defaultConfig.getUsernamePoolSecretName()));
     config.setConsumedUsersSecretName(
         getSystemPropertyOrEnvVar("consumed.usernames.secret", defaultConfig.getConsumedUsersSecretName()));
-    config.setPrometheusEndpointPort(
-        getSystemPropertyOrEnvVar("prometheus.port", defaultConfig.getPrometheusEndpointPort()));
+    config.setMetricsPort(
+        getSystemPropertyOrEnvVar("metrics.port", defaultConfig.getMetricsPort()));
+    config.setHealthsPort(
+      getSystemPropertyOrEnvVar("healths.port", defaultConfig.getHealthsPort()));
     config.setKafkaTimeoutMs(getSystemPropertyOrEnvVar("kafka.timeout.ms", defaultConfig.getKafkaTimeoutMs()));
+    config.setMaxReplicationFactor(getSystemPropertyOrEnvVar("max.replication.factor", defaultConfig.getMaxReplicationFactor()));
+    config.setMaxPartitions(getSystemPropertyOrEnvVar("max.partitions", defaultConfig.getMaxPartitions()));
+    config.setMaxRetentionMs(getSystemPropertyOrEnvVar("max.retention.ms", defaultConfig.getMaxRetentionMs()));
 
     log.debug("Loaded config, {}", config);
     return config;

@@ -21,7 +21,7 @@ public class KafkaOperatorStateTest {
 
   @BeforeEach
   void setUp() {
-    config.setKafkaUrl("localhost:9092");
+    config.setBootstrapServers("localhost:9092");
   }
 
   @Test

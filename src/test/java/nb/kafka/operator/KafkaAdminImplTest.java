@@ -30,7 +30,7 @@ class KafkaAdminImplTest {
   @BeforeEach
   void setUp() {
     AppConfig config = AppConfig.defaultConfig();
-    config.setKafkaUrl(kafkaBroker.getKafkaConnectString());
+    config.setBootstrapServers(kafkaBroker.getKafkaConnectString());
     kafkaAdmin = new KafkaAdminImpl(config);
   }
 

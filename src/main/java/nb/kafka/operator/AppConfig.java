@@ -7,7 +7,7 @@ import java.util.Map;
  * Hold the application configuration.
  */
 public class AppConfig {
-  private String kafkaUrl;
+  private String bootstrapServers;
   private String securityProtocol;
   private short defaultReplicationFactor;
   private boolean enableTopicDelete;
@@ -18,36 +18,44 @@ public class AppConfig {
   private String usernamePoolSecretName;
   private String consumedUsersSecretName;
   private Map<String, String> standardAclLabels;
-  private int prometheusEndpointPort;
+  private int metricsPort;
+  private int healthsPort;
   private int kafkaTimeoutMs;
+  private short maxReplicationFactor;
+  private int maxPartitions;
+  private int maxRetentionMs;
 
   private static AppConfig defaultConfig;
   public static final AppConfig defaultConfig() {
     if (defaultConfig == null) {
       AppConfig conf = new AppConfig();
-      conf.kafkaUrl = "kafka:9092";
+      conf.bootstrapServers = "kafka:9092";
       conf.securityProtocol = "";
-      conf.defaultReplicationFactor = (short)2;
+      conf.defaultReplicationFactor = (short)1;
       conf.enableTopicDelete = false;
-      conf.enableTopicImport = true;
+      conf.enableTopicImport = false;
       conf.enableAclManagement = false;
-      conf.operatorId = "kafka-operator";
+      conf.operatorId = "kafka-topic-operator";
       conf.standardLabels = new HashMap<>();
       conf.usernamePoolSecretName = "kafka-cluster-kafka-auth-pool";
       conf.consumedUsersSecretName = "kafka-cluster-kafka-consumed-auth-pool";
       conf.standardAclLabels = new HashMap<>();
-      conf.prometheusEndpointPort = 9999;
+      conf.metricsPort = 9889;
+      conf.healthsPort = 9559;
       conf.kafkaTimeoutMs = 30000;
+      conf.maxReplicationFactor = (short)3;
+      conf.maxPartitions = 2000;
+      conf.maxRetentionMs = 604800000; // 7 days
       defaultConfig = conf;
     }
     return defaultConfig;
   }
 
-  public String getKafkaUrl() {
-    return kafkaUrl;
+  public String getBootstrapServers() {
+    return bootstrapServers;
   }
-  public void setKafkaUrl(String kafkaUrl) {
-    this.kafkaUrl = kafkaUrl;
+  public void setBootstrapServers(String bootstrapServers) {
+    this.bootstrapServers = bootstrapServers;
   }
   public String getSecurityProtocol() {
     return securityProtocol;
@@ -80,7 +88,7 @@ public class AppConfig {
     this.enableAclManagement = enableAclManagement;
   }
   public String getOperatorId() {
-    return operatorId != null ? operatorId : "kafka-operator";
+    return operatorId;
   }
   public void setOperatorId(String operatorId) {
     this.operatorId = operatorId;
@@ -109,26 +117,63 @@ public class AppConfig {
   public void setStandardAclLabels(Map<String, String> standardAclLabels) {
     this.standardAclLabels = standardAclLabels;
   }
-  public int getPrometheusEndpointPort() {
-    return prometheusEndpointPort;
+  public int getMetricsPort() {
+    return this.metricsPort;
   }
-  public void setPrometheusEndpointPort(int prometheusEndpointPort) {
-    this.prometheusEndpointPort = prometheusEndpointPort;
+  public void setMetricsPort(int metricsPort) {
+    this.metricsPort = metricsPort;
+  }
+  public int getHealthsPort() {
+    return this.healthsPort;
+  }
+  public void setHealthsPort(int healthsPort) {
+    this.healthsPort = healthsPort;
   }
   public int getKafkaTimeoutMs() {
-    return kafkaTimeoutMs;
+    return this.kafkaTimeoutMs;
   }
   public void setKafkaTimeoutMs(int kafkaTimeoutMs) {
     this.kafkaTimeoutMs = kafkaTimeoutMs;
   }
+  public short getMaxReplicationFactor() {
+    return this.maxReplicationFactor;
+  }
+  public void setMaxReplicationFactor(short maxReplicationFactor) {
+    this.maxReplicationFactor = maxReplicationFactor;
+  }
+  public int getMaxPartitions() {
+    return this.maxPartitions;
+  }
+  public void setMaxPartitions(int maxPartitions) {
+    this.maxPartitions = maxPartitions;
+  }
+  public int getMaxRetentionMs() {
+    return this.maxRetentionMs;
+  }
+  public void setMaxRetentionMs(int maxRetentionMs) {
+    this.maxRetentionMs = maxRetentionMs;
+  }
 
   @Override
   public String toString() {
-    return "AppConfig [kafkaUrl=" + kafkaUrl + ", securityProtocol=" + securityProtocol + ", defaultReplicationFactor="
-        + defaultReplicationFactor + ", enableTopicDelete=" + enableTopicDelete + ", enableTopicImport="
-        + enableTopicImport + ", enableAclManagement=" + enableAclManagement + ", operatorId=" + operatorId
-        + ", standardLabels=" + standardLabels + ", usernamePoolSecretName=" + usernamePoolSecretName
-        + ", consumedUsersSecretName=" + consumedUsersSecretName + ", standardAclLabels=" + standardAclLabels
-        + ", prometheusEndpointPort=" + prometheusEndpointPort + ", kafkaTimeoutMs=" + kafkaTimeoutMs + "]";
+    return "AppConfig{" +
+      "bootstrapServers='" + bootstrapServers + '\'' +
+      ", securityProtocol='" + securityProtocol + '\'' +
+      ", defaultReplicationFactor=" + defaultReplicationFactor +
+      ", enableTopicDelete=" + enableTopicDelete +
+      ", enableTopicImport=" + enableTopicImport +
+      ", enableAclManagement=" + enableAclManagement +
+      ", operatorId='" + operatorId + '\'' +
+      ", standardLabels=" + standardLabels +
+      ", usernamePoolSecretName='" + usernamePoolSecretName + '\'' +
+      ", consumedUsersSecretName='" + consumedUsersSecretName + '\'' +
+      ", standardAclLabels=" + standardAclLabels +
+      ", metricsPort=" + metricsPort +
+      ", healthsPort=" + healthsPort +
+      ", kafkaTimeoutMs=" + kafkaTimeoutMs +
+      ", maxReplicationFactor=" + maxReplicationFactor +
+      ", maxPartitions=" + maxPartitions +
+      ", maxRetentionMs=" + maxRetentionMs +
+      '}';
   }
 }

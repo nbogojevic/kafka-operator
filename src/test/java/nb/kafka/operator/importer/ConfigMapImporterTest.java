@@ -44,7 +44,7 @@ public class ConfigMapImporterTest {
     server.before();
 
     appConfig = AppConfig.defaultConfig();
-    appConfig.setKafkaUrl("localhost:9092");
+    appConfig.setBootstrapServers("localhost:9092");
   }
 
   @AfterEach
@@ -90,7 +90,7 @@ public class ConfigMapImporterTest {
   void testImportWithNoTopics() throws InterruptedException, ExecutionException, TimeoutException {
     // Arrange
     AppConfig appConfig = new AppConfig();
-    appConfig.setKafkaUrl("kafka:9092");
+    appConfig.setBootstrapServers("kafka:9092");
     Map<String, String> standardLabels = Collections.singletonMap("config", "kafka-topic");
     appConfig.setStandardLabels(standardLabels);
 

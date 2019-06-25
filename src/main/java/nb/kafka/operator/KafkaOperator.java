@@ -1,8 +1,11 @@
 package nb.kafka.operator;
 
+import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import nb.kafka.operator.model.OperatorError;
+import nb.kafka.operator.util.TopicValidator;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.slf4j.Logger;
@@ -112,6 +115,9 @@ public class KafkaOperator {
 
   private void manageTopic(Topic topic) {
     log.debug("Requested update for {}", topic.getName());
+
+    if(!new TopicValidator(config, topic).isValid())
+      return;
 
     try {
       if (topicManager.listTopics().contains(topic.getName())) {

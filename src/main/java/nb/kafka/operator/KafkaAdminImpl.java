@@ -37,7 +37,7 @@ public class KafkaAdminImpl implements KafkaAdmin {
 
   public KafkaAdminImpl(AppConfig config) {
     Properties conf = new Properties();
-    conf.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.getKafkaUrl());
+    conf.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.getBootstrapServers());
     conf.setProperty(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, Integer.toString(config.getKafkaTimeoutMs()));
     if (!isBlank(config.getSecurityProtocol())) {
       log.info("Using security protocol {}.", config.getSecurityProtocol());

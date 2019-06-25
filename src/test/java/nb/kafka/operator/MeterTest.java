@@ -32,8 +32,8 @@ public class MeterTest {
   @BeforeEach
   void setUp() {
     // make the test runnable without an Internet connection
-    stopHttpEndpoint = Main.setupPrometheusRegistry(config.getPrometheusEndpointPort());
-    config.setKafkaUrl("localhost:9092");
+    stopHttpEndpoint = Main.setupPrometheusRegistry(config.getMetricsPort());
+    config.setBootstrapServers("localhost:9092");
 
     meterMgr = new MeterManager(new SimpleMeterRegistry());
   }
@@ -55,7 +55,7 @@ public class MeterTest {
     // Act
     new KafkaOperator(config, kubeClientMock, kafkaAdminMock, watcherMock, MeterManager.defaultMeterManager());
 
-    String metricEndpoint = "http://localhost:" + config.getPrometheusEndpointPort() + "/metrics";
+    String metricEndpoint = "http://localhost:" + config.getMetricsPort() + "/metrics";
     URLConnection connection = new URL(metricEndpoint).openConnection();
 
     connection.setDoOutput(true);

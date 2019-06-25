@@ -44,17 +44,24 @@ Operator is configured using environment variables or system properties:
 
 Environment variable | System property     | Description | Default value
 ---------------------|---------------------|-------------|--------------
-BOOTSTRAP_SERVER     | bootstrap.server | Address of kafka cluster | kafka:9092
+BOOTSTRAP_SERVERS     | bootstrap.servers | Address of kafka cluster | kafka:9092
 DEFAULT_REPLICATION_FACTOR | default.replication.factor | Default replication factor to use when one is not specified in ConfigMap | 2
-IMPORT_TOPICS        | import.topics | I	f set to true existing topics in kafka cluster will be imported and will be managed by operator | false
+ENABLE_TOPIC_DELETE        | enable.topic.delete | When set to true and a configMap is deleted then the operator will delete the associated topic in the kafka cluster | false
+ENABLE_TOPIC_IMPORT        | enable.topic.import	 | I	f set to true existing topics in kafka cluster will be imported and will be managed by operator | false
+ENABLE_ACL           | enable.acl | If set to true activates acl management | false
+LOG_LEVEL            | LOG_LEVEL | Set log level (debug|info|warn|error) | info
 STANDARD_LABELS      | standard.labels| Comma-separated list of labels that must be set on ConfigMap that are taken into account| empty list
-ENABLE_ACL           | enable.acl | If set to true activates acl managment | false
 STANDARD_ACL_LABELS  | standard.acl.labels| Comma-separated list of labels that must be set on deployments that are taken into account| empty list
 USERNAME_POOL_SECRET | username.pool.secret| Name of the secret containing pool of available usernames | kafka-cluster-kafka-auth-pool
 CONSUMED_USERNAMES_SECRET | consumed.usernames.secret| Name of the secret containing list of already used usernames | kafka-cluster-kafka-consumed-auth-pool
 SECURITY_PROTOCOL    | security.protocol | Security protocol to use SASL_SSL or SASL_PLAINTEXT. | empty
 OPERATOR_ID          | operator.id| Unique id of the operator in a namespace | kafka-operator
-LOG_LEVEL            | LOG_LEVEL | Set log level (debug|info|warn|error) | info
+KAFKA_TIMEOUT_MS          | kafka.timeout.ms | Unique id of the operator in a namespace | 30000
+METRICS_PORT          | metrics.port | HTTP port to expose metrics | 9889
+HEALTHS_PORT          | healths.port | HTTP port for health check endpoints | 9559
+MAX_REPLICATION_FACTOR          | max.replication.factor | The maximum allowed value of replication factor | 3
+MAX_PARTITIONS          | max.partitions | The maximum allowed value of topic partitions | 2000
+MAX_RETENTION_MS          | max.retention.ms | The maximum allowed value of topic retention in Ms | 604800000 (7 days)
 
 ## How to manage kafka topics
 

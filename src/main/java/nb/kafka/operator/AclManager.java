@@ -73,7 +73,7 @@ public class AclManager implements Closeable {
     this.useInitializers = false;
 
     Properties conf = new Properties();
-    conf.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.getKafkaUrl());
+    conf.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.getBootstrapServers());
     if (config.getSecurityProtocol() != null && !config.getSecurityProtocol().trim().isEmpty()) {
       log.info("Using security protocol {}.", config.getSecurityProtocol());
       conf.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, config.getSecurityProtocol());
@@ -140,7 +140,7 @@ public class AclManager implements Closeable {
     Map<String, String> secretMap = new HashMap<>();
     secretMap.put("username", assignedUser.getKey());
     secretMap.put("password", assignedUser.getValue());
-    secretMap.put("bootstrap.server", config.getKafkaUrl());
+    secretMap.put("bootstrap.server", config.getBootstrapServers());
     secretMap.put("kafka-client-jaas.conf", jaasConf(assignedUser.getKey(), assignedUser.getValue()));
 
     Map<String, String> labels = new HashMap<>();

@@ -63,8 +63,7 @@ public class TopicManager {
           newTopic.getPartitions());
     }
 
-    if (newTopic.getProperties() == null || !newTopic.getProperties()
-        .equals(oldTopic.getProperties())) {
+    if (newTopic.getProperties() == null || !newTopic.getProperties().equals(oldTopic.getProperties())) {
       kafkaAdmin.alterConfigs(newTopic);
       log.info("Updated topic properties. name: {}, new properties: {}", newTopic.getName(), newTopic.getProperties());
     } else {

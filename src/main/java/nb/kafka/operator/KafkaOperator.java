@@ -1,11 +1,8 @@
 package nb.kafka.operator;
 
-import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import nb.kafka.operator.model.OperatorError;
-import nb.kafka.operator.util.TopicValidator;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.slf4j.Logger;
@@ -17,6 +14,7 @@ import io.micrometer.core.instrument.Gauge;
 import nb.kafka.operator.importer.ConfigMapImporter;
 import nb.kafka.operator.importer.TopicImporter;
 import nb.kafka.operator.util.MeterManager;
+import nb.kafka.operator.util.TopicValidator;
 import nb.kafka.operator.watch.ConfigMapWatcher;
 import nb.kafka.operator.watch.TopicWatcher;
 
@@ -64,7 +62,7 @@ public class KafkaOperator {
       this.managedTopics = new ManagedTopicList(meterManager, config, topicWatcher.listTopics());
 
       this.operatorState = State.CREATED;
-      meterManager.register(Gauge.builder("operator.state", operatorState::ordinal));
+      meterManager.register(Gauge.builder("operator.state", this, o -> o.getState().ordinal()));
     } catch (Throwable t) {
       this.operatorState = State.FAILED;
       throw t;
@@ -137,13 +135,13 @@ public class KafkaOperator {
   }
 
   public void deleteTopic(String topicName) {
+    managedTopics.delete(topicName);
     if (!config.isEnabledTopicDelete()) {
       return;
     }
 
     try {
       topicManager.deleteTopic(topicName);
-      managedTopics.delete(topicName);
     } catch (InterruptedException | ExecutionException e) {
       log.error("Exception occured during topic deletion. name: {}", topicName, e);
     }

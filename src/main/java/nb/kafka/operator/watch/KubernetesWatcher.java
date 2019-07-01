@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import nb.kafka.operator.util.TopicUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +13,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import nb.kafka.operator.AppConfig;
 import nb.kafka.operator.Topic;
+import nb.kafka.operator.util.TopicUtil;
 
 /**
  * A skeleton class for watching Kubernetes resources that represent topic models.

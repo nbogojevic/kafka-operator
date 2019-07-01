@@ -1,13 +1,14 @@
 package nb.kafka.operator.util;
 
-import nb.kafka.operator.AppConfig;
-import nb.kafka.operator.Topic;
-import nb.kafka.operator.model.OperatorError;
+import java.util.ArrayList;
+import java.util.Collections;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import nb.kafka.operator.AppConfig;
+import nb.kafka.operator.Topic;
+import nb.kafka.operator.model.OperatorError;
 
 public final class TopicValidator {
   private static final Logger log = LoggerFactory.getLogger(TopicValidator.class);

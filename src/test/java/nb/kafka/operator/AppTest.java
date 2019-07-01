@@ -11,7 +11,6 @@ public class AppTest {
     AppConfig defaultConfig = AppConfig.defaultConfig();
 
     assertEquals(defaultConfig.getBootstrapServers(), config.getBootstrapServers());
-
     assertEquals(defaultConfig.getOperatorId(), config.getOperatorId());
     assertEquals(defaultConfig.getDefaultReplicationFactor(), config.getDefaultReplicationFactor());
     assertEquals(defaultConfig.isEnabledTopicImport(), config.isEnabledTopicImport());

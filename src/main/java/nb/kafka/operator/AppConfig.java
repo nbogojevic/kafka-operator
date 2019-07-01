@@ -1,5 +1,7 @@
 package nb.kafka.operator;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,9 +25,13 @@ public class AppConfig {
   private int kafkaTimeoutMs;
   private short maxReplicationFactor;
   private int maxPartitions;
-  private int maxRetentionMs;
+  private long maxRetentionMs;
 
   private static AppConfig defaultConfig;
+
+  /**
+   * Return the default configuration. Mutating the returned object has no effect.
+   */
   public static final AppConfig defaultConfig() {
     if (defaultConfig == null) {
       AppConfig conf = new AppConfig();
@@ -45,10 +51,33 @@ public class AppConfig {
       conf.kafkaTimeoutMs = 30000;
       conf.maxReplicationFactor = (short)3;
       conf.maxPartitions = 2000;
-      conf.maxRetentionMs = 604800000; // 7 days
+      conf.maxRetentionMs = Duration.of(7, ChronoUnit.DAYS).toMillis();
       defaultConfig = conf;
     }
-    return defaultConfig;
+    return new AppConfig(defaultConfig);
+  }
+
+  public AppConfig() {
+  }
+
+  public AppConfig(AppConfig config) {
+    this.setBootstrapServers(config.getBootstrapServers());
+    this.setSecurityProtocol(config.getSecurityProtocol());
+    this.setDefaultReplicationFactor(config.getDefaultReplicationFactor());
+    this.setEnableTopicDelete(config.isEnabledTopicDelete());
+    this.setEnableTopicImport(config.isEnabledTopicImport());
+    this.setEnableAclManagement(config.isEnabledAclManagement());
+    this.setOperatorId(config.getOperatorId());
+    this.setStandardLabels(config.getStandardLabels());
+    this.setStandardAclLabels(config.getStandardAclLabels());
+    this.setUsernamePoolSecretName(config.getUsernamePoolSecretName());
+    this.setConsumedUsersSecretName(config.getConsumedUsersSecretName());
+    this.setMetricsPort(config.getMetricsPort());
+    this.setHealthsPort(config.getHealthsPort());
+    this.setKafkaTimeoutMs(config.getKafkaTimeoutMs());
+    this.setMaxReplicationFactor(config.getMaxReplicationFactor());
+    this.setMaxPartitions(config.getMaxPartitions());
+    this.setMaxRetentionMs(config.getMaxRetentionMs());
   }
 
   public String getBootstrapServers() {
@@ -147,10 +176,10 @@ public class AppConfig {
   public void setMaxPartitions(int maxPartitions) {
     this.maxPartitions = maxPartitions;
   }
-  public int getMaxRetentionMs() {
+  public long getMaxRetentionMs() {
     return this.maxRetentionMs;
   }
-  public void setMaxRetentionMs(int maxRetentionMs) {
+  public void setMaxRetentionMs(long maxRetentionMs) {
     this.maxRetentionMs = maxRetentionMs;
   }
 

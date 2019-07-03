@@ -5,11 +5,12 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import nb.kafka.operator.model.OperatorError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sun.net.httpserver.HttpServer;
+
+import nb.kafka.operator.model.OperatorError;
 
 @SuppressWarnings("restriction")
 public class HealthServer {

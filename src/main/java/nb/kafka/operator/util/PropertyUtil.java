@@ -75,6 +75,11 @@ public final class PropertyUtil {
     return Integer.parseInt(result);
   }
 
+  public static long getSystemPropertyOrEnvVar(String systemPropertyName, long defaultValue) {
+    String result = getSystemPropertyOrEnvVar(systemPropertyName, String.valueOf(defaultValue));
+    return Long.parseLong(result);
+  }
+
   public static short getSystemPropertyOrEnvVar(String systemPropertyName, short defaultValue) {
     String result = getSystemPropertyOrEnvVar(systemPropertyName, String.valueOf(defaultValue));
     return Short.parseShort(result);

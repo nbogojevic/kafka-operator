@@ -115,7 +115,7 @@ public class KafkaOperator {
   private void manageTopic(Topic topic) {
     log.debug("Requested update for {}", topic.getName());
 
-    if(!new TopicValidator(config, topic).isValid()) {
+    if (!new TopicValidator(config, topic).isValid()) {
       return;
     }
 

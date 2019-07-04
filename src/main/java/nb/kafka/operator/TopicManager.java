@@ -51,8 +51,9 @@ public class TopicManager implements AutoCloseable {
   public void updateTopic(Topic newTopic) throws InterruptedException, ExecutionException {
     PartitionedTopic oldTopic = describeTopic(newTopic.getName());
 
-    if(!new TopicValidator(config, newTopic, oldTopic).isValid())
+    if (!new TopicValidator(config, newTopic, oldTopic).isValid()) {
       return;
+    }
 
     if (newTopic.getPartitions() > oldTopic.getPartitions()) {
       kafkaAdmin.createPartitions(newTopic.getName(), newTopic.getPartitions());

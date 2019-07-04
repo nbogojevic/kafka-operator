@@ -103,7 +103,7 @@ public class TopicManagerTest {
     ConfigEntry configEntry = new ConfigEntry("compression.type", "producer");
     when(kafkaAdmin.describeConfigs(topicName)).thenReturn(new Config(Collections.singleton(configEntry)));
 
-    AppConfig config = new AppConfig();
+    AppConfig config = AppConfig.defaultConfig();
     TopicManager topicManager = new TopicManager(kafkaAdmin, config);
 
     // Act
@@ -151,7 +151,7 @@ public class TopicManagerTest {
     TopicManager topicManager = new TopicManager(kafkaAdmin, config);
 
     // Act
-    TopicManager.PartitionnedTopic partitionedTopic = topicManager.describeTopic(topicName);
+    TopicManager.PartitionedTopic partitionedTopic = topicManager.describeTopic(topicName);
 
     // Assert
     verify(kafkaAdmin).describeTopic(topicName);

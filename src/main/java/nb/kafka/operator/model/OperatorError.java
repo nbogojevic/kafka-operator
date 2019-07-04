@@ -28,6 +28,6 @@ public enum OperatorError {
 
   @Override
   public String toString() {
-    return String.format("%s [%s]: %s", this.name(), this.code, this.description);
+    return this.name() + " [" + this.code + "]: " + this.description;
   }
 }

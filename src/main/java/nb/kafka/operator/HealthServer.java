@@ -28,13 +28,12 @@ public class HealthServer {
       }
     });
     
-    logger.info("Starting health checks server on port: " + config.getHealthsPort());
+    logger.info("Starting health checks server on port: {}", config.getHealthsPort());
     server.start();
   }
 
   private static boolean isKafkaReachable(AppConfig config) {
-    try {
-      KafkaAdmin ka = new KafkaAdminImpl(config);
+    try (KafkaAdmin ka = new KafkaAdminImpl(config)) {
       ka.listTopics();
       return true;
     } catch (TimeoutException | InterruptedException | ExecutionException e) {

@@ -16,7 +16,7 @@ import io.micrometer.core.instrument.Timer;
 /**
  * Centralized manager for tracking all meter instances.
  */
-public class MeterManager {
+public class MeterManager implements AutoCloseable {
   private final MeterRegistry registry;
   private final Map<Meter.Id, Meter> meters = new ConcurrentHashMap<>();
 
@@ -78,6 +78,7 @@ public class MeterManager {
     return meters.keySet();
   }
 
+  @Override
   public void close() {
     meters.values().forEach(meter -> {
       meter.close();

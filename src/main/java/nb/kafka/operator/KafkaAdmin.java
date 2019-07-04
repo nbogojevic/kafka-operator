@@ -11,7 +11,7 @@ import org.apache.kafka.clients.admin.TopicDescription;
 /**
  * Kafka Management interface.
  */
-public interface KafkaAdmin {
+public interface KafkaAdmin extends AutoCloseable {
   int deleteTopic(String topicName) throws InterruptedException, ExecutionException;
   int createTopic(NewTopic topic) throws InterruptedException, ExecutionException;
   int numberOfBrokers() throws InterruptedException, ExecutionException;
@@ -20,4 +20,7 @@ public interface KafkaAdmin {
   Set<String> listTopics() throws InterruptedException, ExecutionException, TimeoutException;
   void createPartitions(String topicName, int nbPartitions) throws InterruptedException, ExecutionException;
   void alterConfigs(Topic topic) throws InterruptedException, ExecutionException;
+
+  default void close() {
+  }
 }

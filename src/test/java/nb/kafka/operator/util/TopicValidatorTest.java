@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -152,7 +152,7 @@ public class TopicValidatorTest {
     TopicValidator topicValidator = new TopicValidator(appConfig, topic);
 
     //Act
-    ArrayList<OperatorError> errors = topicValidator.validate();
+    Set<OperatorError> errors = topicValidator.validate();
 
     //Assert
     assertTrue(errors.isEmpty());
@@ -169,7 +169,7 @@ public class TopicValidatorTest {
     TopicValidator topicValidator = new TopicValidator(appConfig, topic);
 
     //Act
-    ArrayList<OperatorError> errors = topicValidator.validate();
+    Set<OperatorError> errors = topicValidator.validate();
 
     //Assert
     assertFalse(errors.isEmpty());

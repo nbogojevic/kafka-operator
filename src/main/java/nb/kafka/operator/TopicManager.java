@@ -18,7 +18,7 @@ import org.apache.kafka.common.errors.TopicExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TopicManager {
+public class TopicManager implements AutoCloseable {
   private static final Logger log = LoggerFactory.getLogger(TopicManager.class);
 
   private final KafkaAdmin kafkaAdmin;
@@ -134,5 +134,10 @@ public class TopicManager {
     public List<TopicPartitionInfo> getPartitionInfos() {
       return partitionInfos;
     }
+  }
+
+  @Override
+  public void close() {
+    kafkaAdmin.close();
   }
 }

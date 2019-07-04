@@ -159,7 +159,7 @@ public class TopicManagerTest {
     TopicManager topicManager = new TopicManager(kafkaAdmin, config);
 
     // Act
-    TopicManager.PartitionedTopic partitionedTopic = topicManager.describeTopic(topicName);
+    PartitionedTopic partitionedTopic = topicManager.describeTopic(topicName);
 
     // Assert
     verify(kafkaAdmin).describeTopic(topicName);

@@ -52,7 +52,7 @@ public abstract class AbstractTopicImporter implements TopicImporter {
           doCreateResource(topicName);
         }
       }
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+    } catch (InterruptedException | ExecutionException | TimeoutException e) { // NOSONAR
       log.error("Exception while importing topics", e);
     }
   }
@@ -60,7 +60,7 @@ public abstract class AbstractTopicImporter implements TopicImporter {
   private void doCreateResource(String topicName) {
     try {
       createTopicResource(topicManager.describeTopic(topicName));
-    } catch (InterruptedException | ExecutionException e) {
+    } catch (InterruptedException | ExecutionException e) { // NOSONAR
       log.error("Exception while importing topic. name = {}", topicName, e);
     }
   }

@@ -4,7 +4,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import nb.kafka.operator.util.TopicUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +11,7 @@ import nb.kafka.operator.AppConfig;
 import nb.kafka.operator.Topic;
 import nb.kafka.operator.TopicManager;
 import nb.kafka.operator.util.PropertyUtil;
+import nb.kafka.operator.util.TopicUtil;
 import nb.kafka.operator.watch.TopicWatcher;
 
 /**

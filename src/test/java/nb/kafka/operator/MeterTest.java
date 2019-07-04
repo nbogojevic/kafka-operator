@@ -143,7 +143,7 @@ public class MeterTest {
     assertEquals(1D, topicGauge.value(), 0.1);
     assertEquals(1, registry.get("managed.topic").gauges().size());
   }
-  
+
   @Test
   public void testOperatorStateGauge() throws Throwable {
     // Arrange
@@ -159,10 +159,10 @@ public class MeterTest {
 
     // Assert
     assertEquals(KafkaOperator.State.CREATED.ordinal(), stateGauge.value());
-    
+
     operator.watch();
     assertEquals(KafkaOperator.State.RUNNING.ordinal(), stateGauge.value());
-    
+
     operator.shutdown();
     assertEquals(KafkaOperator.State.STOPPED.ordinal(), stateGauge.value());
   }

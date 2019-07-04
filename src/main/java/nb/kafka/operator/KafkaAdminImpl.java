@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.kafka.clients.admin.AdminClient;
@@ -33,6 +34,7 @@ import org.slf4j.LoggerFactory;
 public class KafkaAdminImpl implements KafkaAdmin {
   private static final Logger log = LoggerFactory.getLogger(KafkaAdminImpl.class);
 
+  private final AppConfig config;
   private final AdminClient client;
 
   public KafkaAdminImpl(AppConfig config) {
@@ -44,6 +46,7 @@ public class KafkaAdminImpl implements KafkaAdmin {
       conf.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, config.getSecurityProtocol());
       conf.setProperty(SaslConfigs.SASL_MECHANISM, "PLAIN");
     }
+    this.config = config;
     this.client = AdminClient.create(conf);
   }
 
@@ -102,5 +105,10 @@ public class KafkaAdminImpl implements KafkaAdmin {
     topic.getProperties().forEach((k, v) -> entries.add(new ConfigEntry(k, v)));
     AlterConfigsResult ar = client.alterConfigs(Collections.singletonMap(cr, new Config(entries)));
     ar.all().get();
+  }
+
+  @Override
+  public void close() {
+    client.close(config.getKafkaTimeoutMs(), TimeUnit.MILLISECONDS);
   }
 }

@@ -1,47 +1,50 @@
 package nb.kafka.operator.util;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import nb.kafka.operator.AppConfig;
 import nb.kafka.operator.Topic;
 import nb.kafka.operator.TopicManager;
 import nb.kafka.operator.model.OperatorError;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Collections;
 
 public final class TopicValidator {
-  private static final Logger log = LoggerFactory.getLogger(TopicValidator.class);
+  private static final Logger log = LoggerFactory.getLogger(TopicValidator.class);  
 
-  AppConfig appConfig;
-  Topic topic;
-  TopicManager.PartitionedTopic existingTopic;
+ 
+  private final AppConfig appConfig;
+  private final Topic topic;
+  private TopicManager.PartitionedTopic existingTopic;
 
-  public TopicValidator(AppConfig appConfig, Topic topic,TopicManager.PartitionedTopic existingTopic) {
+  public TopicValidator(AppConfig appConfig, Topic topic, TopicManager.PartitionedTopic existingTopic) {
     this(appConfig, topic);
     this.existingTopic = existingTopic;
   }
+
   public TopicValidator(AppConfig appConfig, Topic topic) {
     this.appConfig = appConfig;
     this.topic = topic;
   }
 
-  protected ArrayList<OperatorError> validate(){
-    ArrayList<OperatorError> errors = new ArrayList<>();
+  public Set<OperatorError> validate() {
+    Set<OperatorError> errors = new HashSet<>();
     errors.add(validateTopicName());
     errors.add(validateReplicationFactor());
     errors.add(validatePartitions());
     errors.add(validateRetentionMs());
     errors.add(validatePartitionsChange());
     errors.add(validateReplicationChange());
-    errors.removeAll(Collections.singleton(null));
+    errors.remove(null);
     return errors;
   }
 
   public boolean isValid() {
-    ArrayList<OperatorError> errors = this.validate();
+    Set<OperatorError> errors = this.validate();
     if (!errors.isEmpty()) {
-      errors.forEach( e -> log.error(e.getErrorMessage()));
+      errors.forEach(e -> log.error(e.getErrorMessage()));
       return false;
     }
     return true;
@@ -106,15 +109,15 @@ public final class TopicValidator {
   }
 
   protected OperatorError validateReplicationChange() {
-      if (this.existingTopic != null &&
-              this.topic.getReplicationFactor() != 0 &&
-              this.topic.getReplicationFactor() != this.existingTopic.getReplicationFactor()) {
-        OperatorError error = OperatorError.REPLICATION_FACTOR_CHANGE_NOT_SUPPORTED;
-        String errorMessage = String.format(error.toString(),
-          this.topic.getReplicationFactor(), this.existingTopic.getReplicationFactor());
-        error.setErrorMessage(errorMessage);
-        return error;
-      }
-      return null;
+    if (this.existingTopic != null &&
+            this.topic.getReplicationFactor() != 0 &&
+            this.topic.getReplicationFactor() != this.existingTopic.getReplicationFactor()) {
+      OperatorError error = OperatorError.REPLICATION_FACTOR_CHANGE_NOT_SUPPORTED;
+      String errorMessage = String.format(error.toString(),
+        this.topic.getReplicationFactor(), this.existingTopic.getReplicationFactor());
+      error.setErrorMessage(errorMessage);
+      return error;
     }
+    return null;
+  }
 }

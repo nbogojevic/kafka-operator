@@ -1,32 +1,33 @@
 package nb.kafka.operator.util;
 
-import nb.kafka.operator.AppConfig;
-import nb.kafka.operator.Topic;
-import nb.kafka.operator.TopicManager;
-import nb.kafka.operator.model.OperatorError;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-class TopicValidatorTest {
-  Topic topic;
-  AppConfig appConfig;
+import nb.kafka.operator.AppConfig;
+import nb.kafka.operator.Topic;
+import nb.kafka.operator.TopicManager;
+import nb.kafka.operator.model.OperatorError;
+
+public class TopicValidatorTest {
+  private AppConfig appConfig;
 
   @BeforeEach
-  void setUp() {
-    Map<String, String> properties = new HashMap<>();
-    properties.put("retention.ms", "100000");
-    this.topic = new Topic("topic-name", 10, (short)1, properties, false);
-    this.appConfig = new AppConfig();
+  public void setUp() {
+    this.appConfig = AppConfig.defaultConfig();
   }
 
   @Test
-  void testValidateTopicNameNotValid() {
+  public void testValidateTopicNameNotValid() {
     //Arrange
     Topic topic = new Topic("__topic-name", 10, (short)1, null, false);
     TopicValidator topicValidator = new TopicValidator(null, topic);
@@ -40,7 +41,7 @@ class TopicValidatorTest {
   }
 
   @Test
-  void testValidateTopicNameValid() {
+  public void testValidateTopicNameValid() {
     //Arrange
     Topic topic = new Topic("topic-name", 10, (short)1, null, false);
     TopicValidator topicValidator = new TopicValidator(null, topic);
@@ -53,10 +54,9 @@ class TopicValidatorTest {
   }
 
   @Test
-  void testValidateReplicationFactorNotValid() {
+  public void testValidateReplicationFactorNotValid() {
     //Arrange
     Topic topic = new Topic("topic-name", 10, (short)4, null, false);
-    AppConfig appConfig = AppConfig.defaultConfig();
     appConfig.setMaxReplicationFactor((short) 2);
     TopicValidator topicValidator = new TopicValidator(appConfig, topic);
     int expectedErrorcode = OperatorError.EXCEEDS_MAX_REPLICATION_FACTOR.getCode();
@@ -69,10 +69,9 @@ class TopicValidatorTest {
   }
 
   @Test
-  void testValidateReplicationFactorValid() {
+  public void testValidateReplicationFactorValid() {
     //Arrange
     Topic topic = new Topic("topic-name", 10, (short)2, null, false);
-    AppConfig appConfig = AppConfig.defaultConfig();
     appConfig.setMaxReplicationFactor((short) 3);
     TopicValidator topicValidator = new TopicValidator(appConfig, topic);
 
@@ -84,10 +83,9 @@ class TopicValidatorTest {
   }
 
   @Test
-  void testValidatePartitionsNotValid() {
+  public void testValidatePartitionsNotValid() {
     //Arrange
     Topic topic = new Topic("topic-name", 20, (short)4, null, false);
-    AppConfig appConfig = AppConfig.defaultConfig();
     appConfig.setMaxPartitions(10);
     TopicValidator topicValidator = new TopicValidator(appConfig, topic);
     int expectedErrorcode = OperatorError.EXCEEDS_MAX_PARTITIONS.getCode();
@@ -100,10 +98,9 @@ class TopicValidatorTest {
   }
 
   @Test
-  void testValidatePartitionsValid() {
+  public void testValidatePartitionsValid() {
     //Arrange
     Topic topic = new Topic("topic-name", 10, (short)2, null, false);
-    AppConfig appConfig = AppConfig.defaultConfig();
     appConfig.setMaxPartitions(20);
     TopicValidator topicValidator = new TopicValidator(appConfig, topic);
 
@@ -115,12 +112,11 @@ class TopicValidatorTest {
   }
 
   @Test
-  void testValidateRetentionMsNotValid() {
+  public void testValidateRetentionMsNotValid() {
     //Arrange
     Map<String, String> properties = new HashMap<>();
     properties.put("retention.ms", "5000001");
     Topic topic = new Topic("topic-name", 20, (short)4, properties, false);
-    AppConfig appConfig = AppConfig.defaultConfig();
     appConfig.setMaxRetentionMs(5000000);
     TopicValidator topicValidator = new TopicValidator(appConfig, topic);
     int expectedErrorCode = OperatorError.EXCEEDS_MAX_RETENTION_MS.getCode();
@@ -133,12 +129,11 @@ class TopicValidatorTest {
   }
 
   @Test
-  void testValidateRetentionMsValid() {
+  public void testValidateRetentionMsValid() {
     //Arrange
     Map<String, String> properties = new HashMap<>();
     properties.put("retention.ms", "5000000");
     Topic topic = new Topic("topic-name", 20, (short)4, properties, false);
-    AppConfig appConfig = AppConfig.defaultConfig();
     appConfig.setMaxRetentionMs(5000001);
     TopicValidator topicValidator = new TopicValidator(appConfig, topic);
 
@@ -222,30 +217,28 @@ class TopicValidatorTest {
     Map<String, String> properties = new HashMap<>();
     properties.put("retention.ms", "200000");
     Topic topic = new Topic("topic-name", 20, (short)2, properties, false);
-    AppConfig appConfig = AppConfig.defaultConfig();
     appConfig.setMaxRetentionMs(5000000);
     TopicValidator topicValidator = new TopicValidator(appConfig, topic);
 
     //Act
-    ArrayList<OperatorError> errors = topicValidator.validate();
+    Set<OperatorError> errors = topicValidator.validate();
 
     //Assert
     assertTrue(errors.isEmpty());
   }
 
   @Test
-  void testValidateSomeNotValid() {
+  public void testValidateSomeNotValid() {
     //Arrange
     Map<String, String> properties = new HashMap<>();
     properties.put("retention.ms", "20000000");
     Topic topic = new Topic("topic-name", 20, (short)3, properties, false);
-    AppConfig appConfig = AppConfig.defaultConfig();
     appConfig.setMaxRetentionMs(5000000);
     appConfig.setMaxReplicationFactor((short)2);
     TopicValidator topicValidator = new TopicValidator(appConfig, topic);
 
     //Act
-    ArrayList<OperatorError> errors = topicValidator.validate();
+    Set<OperatorError> errors = topicValidator.validate();
 
     //Assert
     assertFalse(errors.isEmpty());
@@ -253,12 +246,11 @@ class TopicValidatorTest {
   }
 
   @Test
-  void testIsValidAllValid() {
+  public void testIsValidAllValid() {
     //Arrange
     Map<String, String> properties = new HashMap<>();
     properties.put("retention.ms", "200000");
     Topic topic = new Topic("topic-name", 20, (short)2, properties, false);
-    AppConfig appConfig = AppConfig.defaultConfig();
     appConfig.setMaxRetentionMs(5000000);
     TopicValidator topicValidator = new TopicValidator(appConfig, topic);
 
@@ -270,12 +262,11 @@ class TopicValidatorTest {
   }
 
   @Test
-  void testIsValidSomeNotValid() {
+  public void testIsValidSomeNotValid() {
     //Arrange
     Map<String, String> properties = new HashMap<>();
     properties.put("retention.ms", "20000000");
     Topic topic = new Topic("topic-name", 20, (short)3, properties, false);
-    AppConfig appConfig = AppConfig.defaultConfig();
     appConfig.setMaxRetentionMs(5000000);
     appConfig.setMaxReplicationFactor((short)2);
     TopicValidator topicValidator = new TopicValidator(appConfig, topic);

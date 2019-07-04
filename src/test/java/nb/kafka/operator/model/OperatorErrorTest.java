@@ -1,10 +1,8 @@
 package nb.kafka.operator.model;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class OperatorErrorTest {
   @Test

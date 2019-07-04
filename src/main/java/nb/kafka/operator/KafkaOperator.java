@@ -71,6 +71,7 @@ public class KafkaOperator {
   public void shutdown() {
     try {
       topicWatcher.close();
+      topicManager.close();
       if (aclManager != null) {
         aclManager.close();
       }
@@ -109,8 +110,9 @@ public class KafkaOperator {
   private void manageTopic(Topic topic) {
     log.debug("Requested update for {}", topic.getName());
 
-    if(!new TopicValidator(config, topic).isValid())
+    if (!new TopicValidator(config, topic).isValid()) {
       return;
+    }
 
     try {
       Set<String> existingTopics = topicManager.listTopics();

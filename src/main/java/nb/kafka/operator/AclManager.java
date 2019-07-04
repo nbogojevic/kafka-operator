@@ -1,6 +1,5 @@
 package nb.kafka.operator;
 
-import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -49,7 +48,7 @@ import nb.kafka.operator.importer.AbstractTopicImporter;
 import nb.kafka.operator.util.MeterManager;
 import nb.kafka.operator.util.PropertyUtil;
 
-public class AclManager implements Closeable {
+public class AclManager implements AutoCloseable {
   private static final String CONSUMES_TOPICS_ANNOTATION = PropertyUtil.kubeAnnotation("consumes");
   private static final String PRODUCES_TOPICS_ANNOTATION = PropertyUtil.kubeAnnotation("produces");
   private static final Object TOPIC_SECRET_NAME = PropertyUtil.kubeAnnotation("topic-secret");

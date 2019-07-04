@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import nb.kafka.operator.AppConfig;
 import nb.kafka.operator.Topic;
+import nb.kafka.operator.TopicManager;
 import nb.kafka.operator.model.OperatorError;
 
 public class TopicValidatorTest {
@@ -29,13 +31,13 @@ public class TopicValidatorTest {
     //Arrange
     Topic topic = new Topic("__topic-name", 10, (short)1, null, false);
     TopicValidator topicValidator = new TopicValidator(null, topic);
-    int expectedErrorcode = OperatorError.NOT_VALID_TOPIC_NAME.getCode();
+    int expectedErrorCode = OperatorError.NOT_VALID_TOPIC_NAME.getCode();
 
     //Act
     OperatorError operatorError = topicValidator.validateTopicName();
 
     //Assert
-    assertEquals(expectedErrorcode, operatorError.getCode());
+    assertEquals(expectedErrorCode, operatorError.getCode());
   }
 
   @Test
@@ -117,13 +119,13 @@ public class TopicValidatorTest {
     Topic topic = new Topic("topic-name", 20, (short)4, properties, false);
     appConfig.setMaxRetentionMs(5000000);
     TopicValidator topicValidator = new TopicValidator(appConfig, topic);
-    int expectedErrorcode = OperatorError.EXCEEDS_MAX_RETENTION_MS.getCode();
+    int expectedErrorCode = OperatorError.EXCEEDS_MAX_RETENTION_MS.getCode();
 
     //Act
     OperatorError operatorError = topicValidator.validateRetentionMs();
 
     //Assert
-    assertEquals(expectedErrorcode, operatorError.getCode());
+    assertEquals(expectedErrorCode, operatorError.getCode());
   }
 
   @Test
@@ -143,7 +145,74 @@ public class TopicValidatorTest {
   }
 
   @Test
-  public void testValidateAllValid() {
+  void testValidatePartitionsChangeValid() {
+    //Arrange
+    Topic topic = new Topic("topic-name", 30, (short)4, null, false);
+    TopicManager.PartitionedTopic existingTopic = new TopicManager.PartitionedTopic("topic-name", 20,
+                                                                (short)4, null, false, new ArrayList<>());
+    AppConfig appConfig = AppConfig.defaultConfig();
+    TopicValidator topicValidator = new TopicValidator(appConfig, topic, existingTopic);
+
+    //Act
+    OperatorError operatorError = topicValidator.validatePartitionsChange();
+
+    //Assert
+    assertNull(operatorError);
+  }
+
+  @Test
+  void testValidatePartitionsChangeNotValid() {
+    //Arrange
+    Topic topic = new Topic("topic-name", 20, (short)4, null, false);
+    TopicManager.PartitionedTopic existingTopic = new TopicManager.PartitionedTopic("topic-name", 30,
+      (short)4, null, false, new ArrayList<>());
+    AppConfig appConfig = AppConfig.defaultConfig();
+    TopicValidator topicValidator = new TopicValidator(appConfig, topic, existingTopic);
+    int expectedErrorCode = OperatorError.PARTITIONS_REDUCTION_NOT_ALLOWED.getCode();
+
+    //Act
+    OperatorError operatorError = topicValidator.validatePartitionsChange();
+
+    //Assert
+    assertEquals(expectedErrorCode, operatorError.getCode());
+  }
+
+  @Test
+  void testvValidateReplicationChangeValid() {
+    //Arrange
+    Topic topic = new Topic("topic-name", 30, (short)4, null, false);
+    TopicManager.PartitionedTopic existingTopic = new TopicManager.PartitionedTopic("topic-name", 20,
+      (short)4, null, false, new ArrayList<>());
+    AppConfig appConfig = AppConfig.defaultConfig();
+    TopicValidator topicValidator = new TopicValidator(appConfig, topic, existingTopic);
+
+    //Act
+    OperatorError operatorError = topicValidator.validateReplicationChange();
+
+    //Assert
+    assertNull(operatorError);
+  }
+
+  @Test
+  void testValidateReplicationChangeNotValid() {
+    //Arrange
+    Topic topic = new Topic("topic-name", 20, (short)4, null, false);
+    TopicManager.PartitionedTopic existingTopic = new TopicManager.PartitionedTopic("topic-name", 30,
+      (short)3, null, false, new ArrayList<>());
+    AppConfig appConfig = AppConfig.defaultConfig();
+    TopicValidator topicValidator = new TopicValidator(appConfig, topic, existingTopic);
+    int expectedErrorCode = OperatorError.REPLICATION_FACTOR_CHANGE_NOT_SUPPORTED.getCode();
+
+    //Act
+    OperatorError operatorError = topicValidator.validateReplicationChange();
+
+    //Assert
+    assertEquals(expectedErrorCode, operatorError.getCode());
+  }
+
+
+  @Test
+  void testValidateAllValid() {
     //Arrange
     Map<String, String> properties = new HashMap<>();
     properties.put("retention.ms", "200000");

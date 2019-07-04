@@ -1,5 +1,6 @@
 package nb.kafka.operator;
 
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -20,8 +21,6 @@ import nb.kafka.operator.watch.TopicWatcher;
 
 public class KafkaOperator {
   private static final Logger log = LoggerFactory.getLogger(KafkaOperator.class);
-
-  public static final short DEFAULT_REPLICATION_FACTOR = 2;
 
   private final KubernetesClient kubeClient;
   private final TopicManager topicManager;
@@ -67,10 +66,6 @@ public class KafkaOperator {
       this.operatorState = State.FAILED;
       throw t;
     }
-  }
-
-  public KubernetesClient kubeClient() {
-    return kubeClient;
   }
 
   public void shutdown() {
@@ -120,7 +115,8 @@ public class KafkaOperator {
     }
 
     try {
-      if (topicManager.listTopics().contains(topic.getName())) {
+      Set<String> existingTopics = topicManager.listTopics();
+      if (existingTopics.contains(topic.getName())) {
         doUpdateTopic(topic);
       } else {
         NewTopic nt = topicManager.createTopic(topic);

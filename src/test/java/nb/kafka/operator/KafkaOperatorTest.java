@@ -174,54 +174,6 @@ public class KafkaOperatorTest {
  }
 
   @Test
-  public void testUpdateTopicFailReplicationFactorChange() throws Throwable {
- // Arrange
-    Topic updatedTopic = new Topic("test-topic", 1, (short)3, Collections.singletonMap("retention.ms", "3600000"),
-        false);
-    TopicDescription existingTopic = buildTopicDescription(updatedTopic.getName(), updatedTopic.getPartitions(), 1);
-    Config existingTopicProperties = buildTopicConfig(updatedTopic);
-
-    when(kafkaAdminMock.listTopics()).thenReturn(Collections.singleton(updatedTopic.getName()));
-    when(kafkaAdminMock.describeTopic(any(String.class))).thenReturn(existingTopic);
-    when(kafkaAdminMock.describeConfigs(any(String.class))).thenReturn(existingTopicProperties);
-
-    // Act
-    assertThrows(IllegalArgumentException.class, () -> emitUpdate(operator, updatedTopic));
-
-    // Assert
-    verify(kafkaAdminMock, atLeast(0)).alterConfigs(updatedTopic);
-    verify(kafkaAdminMock, atMost(0)).alterConfigs(updatedTopic);
-    verify(kafkaAdminMock, atLeast(0)).createPartitions(updatedTopic.getName(), updatedTopic.getPartitions());
-    verify(kafkaAdminMock, atMost(0)).createPartitions(updatedTopic.getName(), updatedTopic.getPartitions());
-    verify(kafkaAdminMock, atLeast(0)).createTopic(any(NewTopic.class));
-    verify(kafkaAdminMock, atMost(0)).createTopic(any(NewTopic.class));
-  }
-
-  @Test
-  public void testUpdateTopicFailPartitionsReduction() throws Throwable {
-    // Arrange
-    Topic updatedTopic = new Topic("test-topic", 1, (short)1, Collections.singletonMap("retention.ms", "3600000"),
-        false);
-    TopicDescription existingTopic = buildTopicDescription(updatedTopic.getName(), 3, updatedTopic.getReplicationFactor());
-    Config existingTopicProperties = buildTopicConfig(updatedTopic);
-
-    when(kafkaAdminMock.listTopics()).thenReturn(Collections.singleton(updatedTopic.getName()));
-    when(kafkaAdminMock.describeTopic(any(String.class))).thenReturn(existingTopic);
-    when(kafkaAdminMock.describeConfigs(any(String.class))).thenReturn(existingTopicProperties);
-
-    // Act
-    assertThrows(IllegalArgumentException.class, () -> emitUpdate(operator, updatedTopic));
-
-    // Assert
-    verify(kafkaAdminMock, atLeast(0)).alterConfigs(updatedTopic);
-    verify(kafkaAdminMock, atMost(0)).alterConfigs(updatedTopic);
-    verify(kafkaAdminMock, atLeast(0)).createPartitions(updatedTopic.getName(), updatedTopic.getPartitions());
-    verify(kafkaAdminMock, atMost(0)).createPartitions(updatedTopic.getName(), updatedTopic.getPartitions());
-    verify(kafkaAdminMock, atLeast(0)).createTopic(any(NewTopic.class));
-    verify(kafkaAdminMock, atMost(0)).createTopic(any(NewTopic.class));
-  }
-
-  @Test
   public void testDeleteTopic() throws Throwable {
     // Arrange
     config.setEnableTopicDelete(true);

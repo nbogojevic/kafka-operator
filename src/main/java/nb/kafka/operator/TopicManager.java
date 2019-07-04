@@ -9,6 +9,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
+import nb.kafka.operator.model.OperatorError;
+import nb.kafka.operator.util.TopicValidator;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -47,12 +49,10 @@ public class TopicManager implements AutoCloseable {
   }
 
   public void updateTopic(Topic newTopic) throws InterruptedException, ExecutionException {
-    PartitionnedTopic oldTopic = describeTopic(newTopic.getName());
-    if (newTopic.getPartitions() < oldTopic.getPartitions()) {
-      throw new IllegalArgumentException("Reduction of the number of partitions is not allowed");
-    }
-    if (newTopic.getReplicationFactor() != 0 && newTopic.getReplicationFactor() != oldTopic.getReplicationFactor()) {
-      throw new IllegalArgumentException("Change of the replication factor is not supported");
+    PartitionedTopic oldTopic = describeTopic(newTopic.getName());
+
+    if (!new TopicValidator(config, newTopic, oldTopic).isValid()) {
+      return;
     }
 
     if (newTopic.getPartitions() > oldTopic.getPartitions()) {
@@ -76,7 +76,7 @@ public class TopicManager implements AutoCloseable {
     kafkaAdmin.deleteTopic(topicName);
   }
 
-  public PartitionnedTopic describeTopic(String topicName) throws InterruptedException, ExecutionException {
+  public PartitionedTopic describeTopic(String topicName) throws InterruptedException, ExecutionException {
     TopicDescription topicDescription = kafkaAdmin.describeTopic(topicName);
     List<TopicPartitionInfo> partitions = topicDescription.partitions();
     short maxReplicas = partitions.stream()
@@ -86,7 +86,7 @@ public class TopicManager implements AutoCloseable {
         .shortValue();
     int numPartitions = partitions.size();
     Map<String, String> configMap = getTopicConfiguration(topicName);
-    return new PartitionnedTopic(topicName, numPartitions, maxReplicas, configMap, false, partitions);
+    return new PartitionedTopic(topicName, numPartitions, maxReplicas, configMap, false, partitions);
   }
 
   public Set<String> listTopics() throws InterruptedException, ExecutionException, TimeoutException {
@@ -122,17 +122,13 @@ public class TopicManager implements AutoCloseable {
     return config.getDefaultReplicationFactor();
   }
 
-  public static class PartitionnedTopic extends Topic {
+  public static class PartitionedTopic extends Topic {
     private final List<TopicPartitionInfo> partitionInfos;
 
-    public PartitionnedTopic(String name, int numPartitions, short replicationFactor, Map<String, String> properties,
-        boolean acl, List<TopicPartitionInfo> partitionInfos) {
+    public PartitionedTopic(String name, int numPartitions, short replicationFactor, Map<String, String> properties,
+                            boolean acl, List<TopicPartitionInfo> partitionInfos) {
       super(name, numPartitions, replicationFactor, properties, acl);
       this.partitionInfos = Collections.unmodifiableList(partitionInfos);
-    }
-
-    public List<TopicPartitionInfo> getPartitionInfos() {
-      return partitionInfos;
     }
   }
 

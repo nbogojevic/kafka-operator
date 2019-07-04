@@ -24,7 +24,7 @@ import nb.kafka.operator.util.PropertyUtil;
 class KafkaAdminImplTest {
 
   @RegisterExtension
-  public static final SharedKafkaTestResource kafkaBroker = new SharedKafkaTestResource().withBrokers(1);
+  static final SharedKafkaTestResource kafkaBroker = new SharedKafkaTestResource().withBrokers(1);
   private KafkaAdminImpl kafkaAdmin;
 
   @BeforeEach

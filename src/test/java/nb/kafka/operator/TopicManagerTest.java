@@ -49,6 +49,8 @@ public class TopicManagerTest {
     assertEquals(name, newTopic.name());
     assertEquals(partitions, newTopic.numPartitions());
     assertEquals(replicationFactor, newTopic.replicationFactor());
+
+    topicManager.close();
   }
 
   @Test
@@ -77,6 +79,8 @@ public class TopicManagerTest {
     assertEquals(name, newTopic.name());
     assertEquals(numberOfBrokers, newTopic.numPartitions());
     assertEquals(replicationFactor, newTopic.replicationFactor());
+
+    topicManager.close();
   }
 
   @Test
@@ -113,6 +117,8 @@ public class TopicManagerTest {
     verify(kafkaAdmin).describeTopic(topicName);
     verify(kafkaAdmin).describeConfigs(topicName);
     verify(kafkaAdmin).alterConfigs(newTopic);
+
+    topicManager.close();
   }
 
   @Test
@@ -129,6 +135,8 @@ public class TopicManagerTest {
 
     // Assert
     verify(kafkaAdmin, only()).deleteTopic(topicName);
+
+    topicManager.close();
   }
 
   @Test
@@ -159,6 +167,8 @@ public class TopicManagerTest {
     assertEquals(topicName, partitionedTopic.getName());
     assertEquals(expectedTopicDesc, partitionedTopic.toString());
     assertEquals(partitions, partitionedTopic.getPartitions());
+
+    topicManager.close();
   }
 
   @Test
@@ -178,6 +188,8 @@ public class TopicManagerTest {
     // Assert
     assertNotNull(topics);
     assertEquals(expectedTopics, topics);
+
+    topicManager.close();
   }
 
 }

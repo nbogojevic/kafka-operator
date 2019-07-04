@@ -53,7 +53,7 @@ public class TopicCrdWatcher extends KubernetesWatcher<KafkaTopic> {
       KafkaTopicSpec spec = resource.getSpec();
       return new Topic(spec.getName(), spec.getPartitions(), spec.getReplicationFactor(),
           propertiesFromString(spec.getProperties()), spec.getAcl());
-    } catch (IOException e) {
+    } catch (IOException e) { // NOSONAR
       log.error("Unable to parse properties from {} {}", resourceKind(), resource.getMetadata().getName(), e);
       return null;
     }

@@ -1,14 +1,13 @@
 [![Build Status](https://travis-ci.org/nbogojevic/kafka-operator.svg?branch=master)](https://travis-ci.org/nbogojevic/kafka-operator)
 [![Code Coverage](https://codecov.io/github/nbogojevic/kafka-operator/coverage.svg)](https://codecov.io/gh/nbogojevic/kafka-operator)
 
-# kafka operator
+# Kafka operator
 
 Kafka operator is a process that automatically manages creation and deletion of kafka topics, their number of partitions, replicas as well as properties.  
 
 ## How does it work
 
-Operator monitors ConfigMap Kubernetes resources that are tagged with `config=kafka-topic` label. From those ConfigMaps, operator extracts information
-about kafka topic to create/update. This check is by watching all changes to ConfigMaps with the this label.
+Operator monitors ConfigMap Kubernetes resources that are tagged with `config=kafka-topic` label. From those ConfigMaps, operator extracts information about kafka topic to create/update. This check is by watching all changes to ConfigMaps with the this label.
 
 ## How to use kafka operator
 
@@ -177,3 +176,8 @@ TODO: Explain using initializers
 
 Kafka operator can use SASL_PLAINTEXT to authenticate itself when connecting to kafka cluster. See kafka documentation for details on how to provide credentials.
 When using ACL management, the operator will by default activate authentication.
+
+## Using SonarQube locally
+This project use the [SonarQube](https://www.sonarqube.org) inspector. You can setup a local instance in a few minutes: https://docs.sonarqube.org/latest/setup/get-started-2-minutes. 
+
+Once the SonarQube local server is running (`http://localhost:9000`, configurable in `pom.xml`), use `mvn sonar:sonar` to trigger analyses.

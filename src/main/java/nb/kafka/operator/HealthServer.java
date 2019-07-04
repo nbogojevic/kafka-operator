@@ -8,12 +8,15 @@ import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpServer; // NOSONAR
 
 import nb.kafka.operator.model.OperatorError;
 
 @SuppressWarnings("restriction")
-public class HealthServer {
+public final class HealthServer {
+
+  private HealthServer() {
+  }
 
   private static final Logger logger = LoggerFactory.getLogger(HealthServer.class);
 
@@ -36,7 +39,7 @@ public class HealthServer {
     try (KafkaAdmin ka = new KafkaAdminImpl(config)) {
       ka.listTopics();
       return true;
-    } catch (TimeoutException | InterruptedException | ExecutionException e) {
+    } catch (TimeoutException | InterruptedException | ExecutionException e) { // NOSONAR
       logger.error(String.format(OperatorError.KAFKA_UNREACHABLE.toString(), config.getBootstrapServers()));
       return false;
     }

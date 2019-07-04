@@ -7,8 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nb.kafka.operator.AppConfig;
+import nb.kafka.operator.PartitionedTopic;
 import nb.kafka.operator.Topic;
-import nb.kafka.operator.TopicManager;
 import nb.kafka.operator.model.OperatorError;
 
 public final class TopicValidator {
@@ -17,9 +17,9 @@ public final class TopicValidator {
  
   private final AppConfig appConfig;
   private final Topic topic;
-  private TopicManager.PartitionedTopic existingTopic;
+  private PartitionedTopic existingTopic;
 
-  public TopicValidator(AppConfig appConfig, Topic topic, TopicManager.PartitionedTopic existingTopic) {
+  public TopicValidator(AppConfig appConfig, Topic topic, PartitionedTopic existingTopic) {
     this(appConfig, topic);
     this.existingTopic = existingTopic;
   }

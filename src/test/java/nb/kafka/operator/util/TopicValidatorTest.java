@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -14,8 +14,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import nb.kafka.operator.AppConfig;
+import nb.kafka.operator.PartitionedTopic;
 import nb.kafka.operator.Topic;
-import nb.kafka.operator.TopicManager;
 import nb.kafka.operator.model.OperatorError;
 
 public class TopicValidatorTest {
@@ -148,8 +148,8 @@ public class TopicValidatorTest {
   void testValidatePartitionsChangeValid() {
     //Arrange
     Topic topic = new Topic("topic-name", 30, (short)4, null, false);
-    TopicManager.PartitionedTopic existingTopic = new TopicManager.PartitionedTopic("topic-name", 20,
-                                                                (short)4, null, false, new ArrayList<>());
+    PartitionedTopic existingTopic = new PartitionedTopic("topic-name", 20, (short)4, null, false,
+        Collections.emptyList());
     AppConfig appConfig = AppConfig.defaultConfig();
     TopicValidator topicValidator = new TopicValidator(appConfig, topic, existingTopic);
 
@@ -164,8 +164,8 @@ public class TopicValidatorTest {
   void testValidatePartitionsChangeNotValid() {
     //Arrange
     Topic topic = new Topic("topic-name", 20, (short)4, null, false);
-    TopicManager.PartitionedTopic existingTopic = new TopicManager.PartitionedTopic("topic-name", 30,
-      (short)4, null, false, new ArrayList<>());
+    PartitionedTopic existingTopic = new PartitionedTopic("topic-name", 30,
+      (short)4, null, false, Collections.emptyList());
     AppConfig appConfig = AppConfig.defaultConfig();
     TopicValidator topicValidator = new TopicValidator(appConfig, topic, existingTopic);
     int expectedErrorCode = OperatorError.PARTITIONS_REDUCTION_NOT_ALLOWED.getCode();
@@ -181,8 +181,8 @@ public class TopicValidatorTest {
   void testvValidateReplicationChangeValid() {
     //Arrange
     Topic topic = new Topic("topic-name", 30, (short)4, null, false);
-    TopicManager.PartitionedTopic existingTopic = new TopicManager.PartitionedTopic("topic-name", 20,
-      (short)4, null, false, new ArrayList<>());
+    PartitionedTopic existingTopic = new PartitionedTopic("topic-name", 20,
+      (short)4, null, false, Collections.emptyList());
     AppConfig appConfig = AppConfig.defaultConfig();
     TopicValidator topicValidator = new TopicValidator(appConfig, topic, existingTopic);
 
@@ -197,8 +197,8 @@ public class TopicValidatorTest {
   void testValidateReplicationChangeNotValid() {
     //Arrange
     Topic topic = new Topic("topic-name", 20, (short)4, null, false);
-    TopicManager.PartitionedTopic existingTopic = new TopicManager.PartitionedTopic("topic-name", 30,
-      (short)3, null, false, new ArrayList<>());
+    PartitionedTopic existingTopic = new PartitionedTopic("topic-name", 30,
+      (short)3, null, false, Collections.emptyList());
     AppConfig appConfig = AppConfig.defaultConfig();
     TopicValidator topicValidator = new TopicValidator(appConfig, topic, existingTopic);
     int expectedErrorCode = OperatorError.REPLICATION_FACTOR_CHANGE_NOT_SUPPORTED.getCode();

@@ -114,7 +114,7 @@ public final class PropertyUtil {
       StringWriter sw = new StringWriter();
       props.store(sw, null);
       return sw.toString();
-    } catch (IOException e) {
+    } catch (IOException e) { // NOSONAR
       log.error("This exception should not occur.", e);
     }
     return "";

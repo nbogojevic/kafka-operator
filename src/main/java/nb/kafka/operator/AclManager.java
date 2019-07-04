@@ -133,7 +133,7 @@ public class AclManager implements AutoCloseable {
       log.debug("Secret with kafka credentials already exists for {}", deployment.getMetadata().getName());
       return;
     }
-    Map.Entry<String, String> assignedUser = allocateUser(deployment);
+    Map.Entry<String, String> assignedUser = allocateUser();
     log.info("Allocating user {} to {} {}", assignedUser.getKey(), deployment.getKind(), deployment.getMetadata().getName());
     setUpAclForUser(assignedUser.getKey(), consumedTopics, producedTopics);
     Map<String, String> secretMap = new HashMap<>();
@@ -180,7 +180,7 @@ public class AclManager implements AutoCloseable {
     return sb.toString();
   }
 
-  private Map.Entry<String, String> allocateUser(HasMetadata deployment) {
+  private Map.Entry<String, String> allocateUser() {
     Secret usernamePoolSecret = kubeClient.secrets().withName(usernamePoolSecretName).get();
     Secret consumedUsersSecret = kubeClient.secrets().withName(consumedUsersSecretName).get();
     Map<String, String> usernamePool = decodeMap(usernamePoolSecret.getData().get("username-pool"));
@@ -188,7 +188,7 @@ public class AclManager implements AutoCloseable {
     // How much of the pool is used
     userPoolAvailable.set(((usernamePool.size() - consumedUsernames.size()) * 100) / usernamePool.size());
     // Remove all consumed usernames
-    consumedUsernames.forEach(k -> usernamePool.remove(k));
+    consumedUsernames.forEach(usernamePool::remove);
     if (usernamePool.isEmpty()) {
       throw new IllegalStateException("Username pool is exhausted. Please check Secret " + usernamePoolSecretName + " and " + consumedUsersSecretName);
     }
@@ -320,8 +320,8 @@ public class AclManager implements AutoCloseable {
       if (!aclToDelete.isEmpty()) {
         doDeleteAcls(username,consumedTopics, producedTopics, aclToDelete);
       }
-    } catch (InterruptedException | ExecutionException e1) {
-      log.error("Unable to delete set ACL for {}, topics {}, {}.", username, consumedTopics, producedTopics, e1);
+    } catch (InterruptedException | ExecutionException e) { // NOSONAR
+      log.error("Unable to delete set ACL for {}, topics {}, {}.", username, consumedTopics, producedTopics, e);
     }
   }
 
@@ -329,7 +329,7 @@ public class AclManager implements AutoCloseable {
       List<AclBindingFilter> aclToDelete) {
     try {
       adminClient.deleteAcls(aclToDelete).all().get();
-    } catch (InterruptedException | ExecutionException e) {
+    } catch (InterruptedException | ExecutionException e) { // NOSONAR
       log.error("Unable to delete old ACL for {}, topics {}, {}.", username, consumedTopics, producedTopics, e);
     }
   }
@@ -350,8 +350,8 @@ public class AclManager implements AutoCloseable {
           new ResourceFilter(ResourceType.TOPIC, null),
           new AccessControlEntryFilter("User:" + username, null, AclOperation.ANY, AclPermissionType.ANY));
       return adminClient.describeAcls(any).values().get();
-    } catch (InterruptedException | ExecutionException e) {
-      if (e.getCause() != null && e.getCause() instanceof SecurityDisabledException) {
+    } catch (InterruptedException | ExecutionException e) { // NOSONAR
+      if (e.getCause() instanceof SecurityDisabledException) {
         log.debug("Security disabled on server: {}", e.getCause().getMessage());
       } else {
         log.warn("Exception occured during user acls retrieval. name: {}", username, e);

@@ -9,7 +9,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
-import nb.kafka.operator.model.OperatorError;
 import nb.kafka.operator.util.TopicValidator;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
@@ -40,7 +39,7 @@ public class TopicManager implements AutoCloseable {
       log.info("Created topic. name: {}, partitions: {}, replFactor: {}", newTopic.name(), newTopic.numPartitions(),
           newTopic.replicationFactor());
       return newTopic;
-    } catch (InterruptedException | ExecutionException e) {
+    } catch (InterruptedException | ExecutionException e) { // NOSONAR
       if (e.getCause() instanceof TopicExistsException) {
         throw (TopicExistsException)e.getCause();
       }
@@ -109,7 +108,7 @@ public class TopicManager implements AutoCloseable {
           .filter(x -> !x.isDefault() && !x.isReadOnly())
           .collect(Collectors.toMap(ConfigEntry::name, ConfigEntry::value));
       log.debug("Existing configuration for topic {} is {}", topicName, configMap);
-    } catch (InterruptedException | ExecutionException e) {
+    } catch (InterruptedException | ExecutionException e) { // NOSONAR
       log.warn("Exception occured during topic configuration retrieval. name: {}", topicName, e);
     }
     return configMap;
@@ -120,16 +119,6 @@ public class TopicManager implements AutoCloseable {
       return topic.getReplicationFactor();
     }
     return config.getDefaultReplicationFactor();
-  }
-
-  public static class PartitionedTopic extends Topic {
-    private final List<TopicPartitionInfo> partitionInfos;
-
-    public PartitionedTopic(String name, int numPartitions, short replicationFactor, Map<String, String> properties,
-                            boolean acl, List<TopicPartitionInfo> partitionInfos) {
-      super(name, numPartitions, replicationFactor, properties, acl);
-      this.partitionInfos = Collections.unmodifiableList(partitionInfos);
-    }
   }
 
   @Override

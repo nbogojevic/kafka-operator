@@ -27,6 +27,8 @@
 		<http.mock.version>0.0.12</http.mock.version>
 		<prometheus.http.version>0.6.0</prometheus.http.version>
 		<micrometer.version>1.1.1</micrometer.version>
+		<jacoco-maven-plugin.version>0.8.2</jacoco-maven-plugin.version>
+		<sonar-jacoco-listeners.version>3.2</sonar-jacoco-listeners.version>
 	</properties>
 
 	<build>
@@ -84,26 +86,7 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.3</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>prepare-agent</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>report</id>
-						<phase>test</phase>
-						<goals>
-							<goal>report</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.jacoco</groupId>
-				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.3</version>
+				<version>${jacoco-maven-plugin.version}</version>
 				<executions>
 					<execution>
 						<goals>
@@ -124,6 +107,14 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${maven-surefire-plugin.version}</version>
+				<configuration>
+					<properties>
+						<property>
+							<name>listener</name>
+							<value>org.sonar.java.jacoco.JUnitListener</value>
+						</property>
+					</properties>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
@@ -208,7 +199,17 @@
 				</plugins>
 			</build>
 		</profile>
-
+		<profile>
+			<id>sonar</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<sonar.host.url>
+					http://localhost:9000
+				</sonar.host.url>
+			</properties>
+		</profile>
 	</profiles>
 
 	<dependencies>
@@ -254,7 +255,8 @@
 			<artifactId>kubernetes-server-mock</artifactId>
 			<version>${kube.mock.version}</version>
 			<scope>test</scope>
-			<!-- this exclusion are required for running this version of the mock with Java 10+ -->
+			<!-- this exclusion are required for running this version of the mock 
+				with Java 10+ -->
 			<exclusions>
 				<exclusion>
 					<groupId>com.sun</groupId>
@@ -267,7 +269,8 @@
 			<artifactId>mockwebserver</artifactId>
 			<version>${http.mock.version}</version>
 			<scope>test</scope>
-			<!-- this exclusion are required for running this version of the mock with Java 10+ -->
+			<!-- this exclusion are required for running this version of the mock 
+				with Java 10+ -->
 			<exclusions>
 				<exclusion>
 					<groupId>com.sun</groupId>
@@ -294,20 +297,26 @@
 			<groupId>io.prometheus</groupId>
 			<artifactId>simpleclient_httpserver</artifactId>
 			<version>${prometheus.http.version}</version>
-        </dependency>
-        <!-- Declare kafka-junit5 dependency -->
-        <dependency>
-            <groupId>com.salesforce.kafka.test</groupId>
-            <artifactId>kafka-junit5</artifactId>
-            <version>3.1.1</version>
-            <scope>test</scope>
-        </dependency>
-        <!-- Include Kafka 2.0.x -->
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka_2.11</artifactId>
-            <version>${version.kafka}</version>
-            <scope>test</scope>
-        </dependency>
+		</dependency>
+		<dependency>
+			<groupId>org.codehaus.sonar-plugins.java</groupId>
+			<artifactId>sonar-jacoco-listeners</artifactId>
+			<version>${sonar-jacoco-listeners.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- Declare kafka-junit5 dependency -->
+		<dependency>
+			<groupId>com.salesforce.kafka.test</groupId>
+			<artifactId>kafka-junit5</artifactId>
+			<version>3.1.1</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- Include Kafka 2.0.x -->
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka_2.11</artifactId>
+			<version>${version.kafka}</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 </project>

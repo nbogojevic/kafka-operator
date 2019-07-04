@@ -62,9 +62,9 @@ public class KafkaOperator {
 
       this.operatorState = State.CREATED;
       meterManager.register(Gauge.builder("operator.state", this, o -> o.getState().ordinal()));
-    } catch (Throwable t) {
+    } catch (RuntimeException e) {
       this.operatorState = State.FAILED;
-      throw t;
+      throw e;
     }
   }
 
@@ -89,9 +89,9 @@ public class KafkaOperator {
         aclManager.watch();
       }
       operatorState = State.RUNNING;
-    } catch (Throwable t) {
+    } catch (RuntimeException e) {
       operatorState = State.FAILED;
-      throw t;
+      throw e;
     }
   }
 
@@ -124,7 +124,7 @@ public class KafkaOperator {
         log.info("Created topic. name: {}, partitions: {}, replFactor: {}, properties: {}", nt.name(),
             nt.numPartitions(), nt.replicationFactor(), topic.getProperties());
       }
-    } catch (InterruptedException | ExecutionException | TimeoutException | TopicCreationException e) {
+    } catch (InterruptedException | ExecutionException | TimeoutException | TopicCreationException e) { // NOSONAR
       log.error("Exception occured during topic creation. name {}", topic.getName(), e);
     } catch (TopicExistsException e) { // NOSONAR
       log.debug("Topic exists. name {}", topic.getName());
@@ -140,7 +140,7 @@ public class KafkaOperator {
 
     try {
       topicManager.deleteTopic(topicName);
-    } catch (InterruptedException | ExecutionException e) {
+    } catch (InterruptedException | ExecutionException e) { // NOSONAR
       log.error("Exception occured during topic deletion. name: {}", topicName, e);
     }
   }
@@ -148,7 +148,7 @@ public class KafkaOperator {
   private void doUpdateTopic(Topic topic) {
     try {
       topicManager.updateTopic(topic);
-    } catch (InterruptedException | ExecutionException e) {
+    } catch (InterruptedException | ExecutionException e) { // NOSONAR
       log.error("Exception occured during topic update. name {}", topic.getName(), e);
     }
   }

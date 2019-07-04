@@ -93,8 +93,8 @@ public class KafkaAdminImpl implements KafkaAdmin {
 
   @Override
   public void createPartitions(String topicName, int nbPartitions) throws InterruptedException, ExecutionException {
-    Map<String, NewPartitions> config = Collections.singletonMap(topicName, NewPartitions.increaseTo(nbPartitions));
-    CreatePartitionsResult cr = client.createPartitions(config);
+    Map<String, NewPartitions> props = Collections.singletonMap(topicName, NewPartitions.increaseTo(nbPartitions));
+    CreatePartitionsResult cr = client.createPartitions(props);
     cr.all().get();
   }
 

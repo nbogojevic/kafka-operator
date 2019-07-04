@@ -101,7 +101,7 @@ public final class Main {
       HTTPServer server = new HTTPServer(new InetSocketAddress(port), prometheusRegistry.getPrometheusRegistry(), true);
       return server::stop;
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException(e); // NOSONAR
     }
   }
 }

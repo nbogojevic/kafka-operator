@@ -4,6 +4,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +25,6 @@ public abstract class AbstractTopicImporter implements TopicImporter {
 
   public static final String GENERATED_ANNOTATION = PropertyUtil.kubeAnnotation("generated");
   public static final String GENERATOR_LABEL = "generator";
-  public static final String KAFKA_OPERATOR_GENERATOR = "kafka-operator";
 
   private final AppConfig config;
   private final TopicWatcher watcher;
@@ -52,7 +52,7 @@ public abstract class AbstractTopicImporter implements TopicImporter {
           doCreateResource(topicName);
         }
       }
-    } catch (InterruptedException | ExecutionException | TimeoutException e) { // NOSONAR
+    } catch (InterruptedException | ExecutionException | TimeoutException | KubernetesClientException e) { // NOSONAR
       log.error("Exception while importing topics", e);
     }
   }
@@ -60,7 +60,7 @@ public abstract class AbstractTopicImporter implements TopicImporter {
   private void doCreateResource(String topicName) {
     try {
       createTopicResource(topicManager.describeTopic(topicName));
-    } catch (InterruptedException | ExecutionException e) { // NOSONAR
+    } catch (InterruptedException | ExecutionException | KubernetesClientException e) { // NOSONAR
       log.error("Exception while importing topic. name = {}", topicName, e);
     }
   }
@@ -77,9 +77,5 @@ public abstract class AbstractTopicImporter implements TopicImporter {
 
   public TopicWatcher topicWatcher() {
     return watcher;
-  }
-
-  public TopicManager topicManager() {
-    return topicManager;
   }
 }

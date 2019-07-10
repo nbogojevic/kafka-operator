@@ -4,6 +4,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.slf4j.Logger;
@@ -108,6 +109,9 @@ public class KafkaOperator {
   }
 
   private void manageTopic(Topic topic) {
+    if (topic == null){
+      return;
+    }
     log.debug("Requested update for {}", topic.getName());
 
     if (!new TopicValidator(config, topic).isValid()) {
@@ -140,7 +144,7 @@ public class KafkaOperator {
 
     try {
       topicManager.deleteTopic(topicName);
-    } catch (InterruptedException | ExecutionException e) { // NOSONAR
+    } catch (InterruptedException | ExecutionException | KubernetesClientException e) { // NOSONAR
       log.error("Exception occured during topic deletion. name: {}", topicName, e);
     }
   }
@@ -148,7 +152,7 @@ public class KafkaOperator {
   private void doUpdateTopic(Topic topic) {
     try {
       topicManager.updateTopic(topic);
-    } catch (InterruptedException | ExecutionException e) { // NOSONAR
+    } catch (InterruptedException | ExecutionException | KubernetesClientException e) { // NOSONAR
       log.error("Exception occured during topic update. name {}", topic.getName(), e);
     }
   }

@@ -25,7 +25,6 @@ public abstract class AbstractTopicImporter implements TopicImporter {
 
   public static final String GENERATED_ANNOTATION = PropertyUtil.kubeAnnotation("generated");
   public static final String GENERATOR_LABEL = "generator";
-  public static final String KAFKA_OPERATOR_GENERATOR = "kafka-operator";
 
   private final AppConfig config;
   private final TopicWatcher watcher;
@@ -78,9 +77,5 @@ public abstract class AbstractTopicImporter implements TopicImporter {
 
   public TopicWatcher topicWatcher() {
     return watcher;
-  }
-
-  public TopicManager topicManager() {
-    return topicManager;
   }
 }

@@ -85,6 +85,30 @@ public class ConfigMapWatcherTest {
   }
 
   @Test
+  void testBuildTopicModelWithBadFormatProperties() {
+    // Arrange
+    Map<String, String> data = new HashMap<>();
+    data.put("partitions", "2o");
+    data.put("properties", "retention.ms=60111!!!");
+    data.put("replication-factor", "1");
+
+    ObjectMeta metadata = new ObjectMeta();
+    metadata.setName("topic-test");
+
+    Map<String, String> labels = Collections.singletonMap("config", "kafka-topic");
+    metadata.setLabels(labels);
+    ConfigMap cm = new ConfigMap("v1", data, "ConfigMap", metadata);
+    cm.setData(data);
+    try (ConfigMapWatcher configMapWatcher = new ConfigMapWatcher(null, appConfig)) {
+      // Act
+      Topic topic = configMapWatcher.buildTopicModel(cm);
+
+      // Assert
+      assertTrue(topic == null);
+    }
+  }
+
+  @Test
   void testWatchConfigMapCreateTopic() throws InterruptedException {
     String topicName = "test-topic";
     int partitions = 20;

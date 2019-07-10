@@ -1,11 +1,7 @@
 package nb.kafka.operator;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.atMost;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,6 +54,18 @@ public class KafkaOperatorTest {
   void tearDown() {
     operator = null;
     kubernetesServerMock.after();
+  }
+
+  @Test
+  public void testCreateTopicNullArg() throws Throwable {
+    // Arrange
+    Topic topic = null;
+
+    // Act
+    emitCreate(operator, topic);
+
+    // Assert
+    verify(kafkaAdminMock, never()).createTopic(any(NewTopic.class));
   }
 
   @Test
@@ -203,8 +211,6 @@ public class KafkaOperatorTest {
     verify(kafkaAdminMock, atLeast(0)).deleteTopic(deletedTopic.getName());
     verify(kafkaAdminMock, atMost(0)).deleteTopic(deletedTopic.getName());
   }
-
-
 
   private void emitCreate(KafkaOperator operator, Topic topic) throws Throwable {
     AbstractTopicWatcher watcher = WhiteboxUtil.readField(operator, "topicWatcher");

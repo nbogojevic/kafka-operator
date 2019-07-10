@@ -4,6 +4,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +53,7 @@ public abstract class AbstractTopicImporter implements TopicImporter {
           doCreateResource(topicName);
         }
       }
-    } catch (InterruptedException | ExecutionException | TimeoutException e) { // NOSONAR
+    } catch (InterruptedException | ExecutionException | TimeoutException | KubernetesClientException e) { // NOSONAR
       log.error("Exception while importing topics", e);
     }
   }
@@ -60,7 +61,7 @@ public abstract class AbstractTopicImporter implements TopicImporter {
   private void doCreateResource(String topicName) {
     try {
       createTopicResource(topicManager.describeTopic(topicName));
-    } catch (InterruptedException | ExecutionException e) { // NOSONAR
+    } catch (InterruptedException | ExecutionException | KubernetesClientException e) { // NOSONAR
       log.error("Exception while importing topic. name = {}", topicName, e);
     }
   }

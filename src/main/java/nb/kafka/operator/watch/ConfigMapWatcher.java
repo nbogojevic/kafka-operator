@@ -49,7 +49,7 @@ public class ConfigMapWatcher extends KubernetesWatcher<ConfigMap> {
                        getProperty(cm.getData(), REPLICATION_FACTOR_KEY, (short)-1),
                        propertiesFromString(getProperty(cm.getData(), PROPERTIES_KEY, "")),
                        getProperty(cm.getData(), ACL_KEY, false));
-    } catch (IOException e) { // NOSONAR
+    } catch (IOException | NumberFormatException e) { // NOSONAR
       log.error("Unable to parse properties from ConfigMap {}", cm.getMetadata().getName(), e);
       return null;
     }

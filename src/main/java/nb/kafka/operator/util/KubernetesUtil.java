@@ -16,7 +16,18 @@ public final class KubernetesUtil {
   }
 
   public static String makeResourceName(String name) {
-    return name.replace('_', '-').toLowerCase();
+    String resourceName = name.replaceAll("[^-a-zA-Z0-9-.]+","-").toLowerCase();
+    if (resourceName.startsWith("-") || resourceName.startsWith(".")) {
+      resourceName = resourceName.substring(1);
+    }
+    if (resourceName.endsWith("-") || resourceName.endsWith(".")) {
+      resourceName = removeLastChar(resourceName);
+    }
+    return resourceName;
+  }
+
+  private static String removeLastChar(String str) {
+    return str.substring(0, str.length() - 1);
   }
 
   /**

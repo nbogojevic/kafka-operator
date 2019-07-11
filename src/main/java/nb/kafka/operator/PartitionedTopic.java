@@ -16,10 +16,6 @@ public class PartitionedTopic extends Topic {
     this.partitionInfos = Collections.unmodifiableList(partitionInfos);
   }
 
-  public List<TopicPartitionInfo> getPartitionInfos() {
-    return partitionInfos;
-  }
-
   @Override
   public int hashCode() {
     final int prime = 31;

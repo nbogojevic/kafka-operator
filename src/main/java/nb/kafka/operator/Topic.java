@@ -21,14 +21,6 @@ public class Topic {
     this.acl = acl;
   }
 
-  public Topic(Topic topic) {
-    this.name = topic.name;
-    this.partitions = topic.partitions;
-    this.replicationFactor = topic.replicationFactor;
-    this.properties = topic.properties;
-    this.acl = topic.acl;
-  }
-
   public String getName() {
     return name;
   }

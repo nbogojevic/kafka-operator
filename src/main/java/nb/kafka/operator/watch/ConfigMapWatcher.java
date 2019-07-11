@@ -56,6 +56,11 @@ public class ConfigMapWatcher extends KubernetesWatcher<ConfigMap> {
   }
 
   @Override
+  protected String getTopicName(ConfigMap cm) {
+    return getProperty(cm.getData(), TOPIC_NAME_KEY, cm.getMetadata().getName());
+  }
+
+  @Override
   public void watch() {
     log.debug("Watching {} for ConfigMap changes", kubeClient().getNamespace());
     watch = kubeClient().configMaps().withLabels(labels()).watch(this);

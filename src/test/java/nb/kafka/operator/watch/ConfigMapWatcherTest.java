@@ -320,6 +320,54 @@ public class ConfigMapWatcherTest {
      }
   }
 
+  @Test
+  public void testGetTopicNameFromData() {
+    //Arrange
+    String configMapName = "topic-name";
+    String topicName = "_topic_name_";
+    Map<String, String> data = new HashMap<>();
+    data.put("name", topicName);
+    ObjectMeta metadata = new ObjectMeta();
+    metadata.setName(configMapName);
+
+    Map<String, String> labels = Collections.singletonMap("config", "kafka-topic");
+    metadata.setLabels(labels);
+    ConfigMap cm = new ConfigMap("v1", data, "ConfigMap", metadata);
+    cm.setData(data);
+    KubernetesClient client = server.getClient();
+
+    //Act
+    try (ConfigMapWatcher configMapWatcher = new ConfigMapWatcher(client, appConfig)) {
+      String result =  configMapWatcher.getTopicName(cm);
+
+      //Assert
+      assertEquals(topicName, result);
+    }
+  }
+
+  @Test
+  public void testGetTopicNameFromMetadataName() {
+    //Arrange
+    String configMapName = "topic-name";
+    Map<String, String> data = new HashMap<>();
+    ObjectMeta metadata = new ObjectMeta();
+    metadata.setName(configMapName);
+
+    Map<String, String> labels = Collections.singletonMap("config", "kafka-topic");
+    metadata.setLabels(labels);
+    ConfigMap cm = new ConfigMap("v1", data, "ConfigMap", metadata);
+    cm.setData(data);
+    KubernetesClient client = server.getClient();
+
+    //Act
+    try (ConfigMapWatcher configMapWatcher = new ConfigMapWatcher(client, appConfig)) {
+      String result =  configMapWatcher.getTopicName(cm);
+
+      //Assert
+      assertEquals(configMapName, result);
+    }
+  }
+
   private ConfigMap makeConfigMap(String topicName, int partitions, short replicationFactor, long retentionTime) {
     Map<String, String> data = new HashMap<>();
     data.put("partitions", Integer.toString(partitions));

@@ -36,6 +36,8 @@ public abstract class KubernetesWatcher<T extends HasMetadata> extends AbstractT
 
   protected abstract Topic buildTopicModel(T resource);
 
+  protected abstract String getTopicName(T resource);
+
   @Override
   public void eventReceived(Action action, T resource) {
     if (resource == null) {
@@ -43,7 +45,7 @@ public abstract class KubernetesWatcher<T extends HasMetadata> extends AbstractT
       return;
     }
 
-    String topicName = resource.getMetadata().getName();
+    String topicName = getTopicName(resource);
     log.info("Got event {} for {} {}", action, resourceKind(), topicName);
 
     if (!TopicUtil.isValidTopicName(topicName)) {
@@ -58,7 +60,7 @@ public abstract class KubernetesWatcher<T extends HasMetadata> extends AbstractT
         emitUpdate(buildTopicModel(resource));
         break;
       case DELETED:
-        emitDelete(buildTopicModel(resource).getName());
+        emitDelete(topicName);
         break;
       case ERROR:
         log.error("Error event received for {}: {}", resourceKind(), resource);

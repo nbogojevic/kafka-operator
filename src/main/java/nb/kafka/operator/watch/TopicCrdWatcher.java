@@ -60,6 +60,11 @@ public class TopicCrdWatcher extends KubernetesWatcher<KafkaTopic> {
   }
 
   @Override
+  protected String getTopicName(KafkaTopic resource) {
+    return resource.getSpec().getName();
+  }
+
+  @Override
   public List<Topic> listTopics() {
     KafkaTopicList list = crdClient().withLabels(labels()).list();
     return list.getItems()

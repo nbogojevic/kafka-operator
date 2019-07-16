@@ -102,6 +102,12 @@
 						</goals>
 					</execution>
 				</executions>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*Crd*.*</exclude>
+                        <exclude>**/AclManager**</exclude>
+                    </excludes>
+                </configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

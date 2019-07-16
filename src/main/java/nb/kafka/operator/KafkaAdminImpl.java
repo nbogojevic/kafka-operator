@@ -27,7 +27,8 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
-import org.apache.kafka.common.config.SaslConfigs;
+import org.apache.kafka.common.config.SslConfigs;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,10 +42,14 @@ public class KafkaAdminImpl implements KafkaAdmin {
     Properties conf = new Properties();
     conf.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.getBootstrapServers());
     conf.setProperty(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, Integer.toString(config.getKafkaTimeoutMs()));
-    if (!isBlank(config.getSecurityProtocol())) {
+    if (SecurityProtocol.SSL.name.equals(config.getSecurityProtocol())) {
       log.info("Using security protocol {}.", config.getSecurityProtocol());
       conf.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, config.getSecurityProtocol());
-      conf.setProperty(SaslConfigs.SASL_MECHANISM, "PLAIN");
+
+      conf.setProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, config.getSslTrustStoreLocation() );
+      conf.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, config.getSslTrustStorePassword());
+      conf.setProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, config.getSslKeyStoreLocation());
+      conf.setProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, config.getSslKeyStorePassword());
     }
     this.config = config;
     this.client = AdminClient.create(conf);

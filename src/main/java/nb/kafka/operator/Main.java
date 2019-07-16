@@ -52,7 +52,11 @@ public final class Main {
     config.setEnableTopicImport(getSystemPropertyOrEnvVar("enable.topic.import", defaultConfig.isEnabledTopicImport()));
     config.setEnableAclManagement(getSystemPropertyOrEnvVar("enable.acl", defaultConfig.isEnabledAclManagement()));
     config.setEnableTopicDelete(getSystemPropertyOrEnvVar("enable.topic.delete", defaultConfig.isEnabledTopicDelete()));
-    config.setSecurityProtocol(getSystemPropertyOrEnvVar("security.protocol", ""));
+    config.setSecurityProtocol(getSystemPropertyOrEnvVar("security.protocol", defaultConfig.getSecurityProtocol()));
+    config.setSslTrustStoreLocation(getSystemPropertyOrEnvVar("ssl.truststore.location", defaultConfig.getSslTrustStoreLocation()));
+    config.setSslTrustStorePassword(getSystemPropertyOrEnvVar("ssl.truststore.password", defaultConfig.getSslTrustStorePassword()));
+    config.setSslKeyStoreLocation(getSystemPropertyOrEnvVar("ssl.keystore.location", defaultConfig.getSslKeyStoreLocation()));
+    config.setSslKeyStorePassword(getSystemPropertyOrEnvVar("ssl.keystore.password", defaultConfig.getSslKeyStorePassword()));
     if (config.isEnabledAclManagement() && isBlank(config.getSecurityProtocol())) {
       config.setSecurityProtocol("SASL_PLAINTEXT");
       log.warn("ACL was enabled, but not security.protocol, forcing security protocol to {}",

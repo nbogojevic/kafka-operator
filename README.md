@@ -53,7 +53,7 @@ STANDARD_LABELS      | standard.labels| Comma-separated list of labels that must
 STANDARD_ACL_LABELS  | standard.acl.labels| Comma-separated list of labels that must be set on deployments that are taken into account| empty list
 USERNAME_POOL_SECRET | username.pool.secret| Name of the secret containing pool of available usernames | kafka-cluster-kafka-auth-pool
 CONSUMED_USERNAMES_SECRET | consumed.usernames.secret| Name of the secret containing list of already used usernames | kafka-cluster-kafka-consumed-auth-pool
-SECURITY_PROTOCOL    | security.protocol | Security protocol to use SASL_SSL or SASL_PLAINTEXT. | empty
+SECURITY_PROTOCOL    | security.protocol | Security protocol to use SSL, SASL_SSL or SASL_PLAINTEXT. | empty
 OPERATOR_ID          | operator.id| Unique id of the operator in a namespace | kafka-operator
 KAFKA_TIMEOUT_MS          | kafka.timeout.ms | Unique id of the operator in a namespace | 30000
 METRICS_PORT          | metrics.port | HTTP port to expose metrics | 9889

@@ -47,11 +47,6 @@ public final class PropertyUtil {
     return systemPropertyName.toUpperCase().replaceAll("[.-]", "_");
   }
 
-  public static String getEnvVar(String envVarName, String defaultValue) {
-    String answer = System.getenv(envVarName);
-    return isNotNullOrEmpty(answer) ? answer : defaultValue;
-  }
-
   public static String getSystemPropertyOrEnvVar(String systemPropertyName, String defaultValue) {
     return getSystemPropertyOrEnvVar(systemPropertyName, convertSystemPropertyNameToEnvVar(systemPropertyName),
         defaultValue);

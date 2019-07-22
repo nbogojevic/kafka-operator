@@ -26,6 +26,10 @@ public class AppConfig {
   private short maxReplicationFactor;
   private int maxPartitions;
   private long maxRetentionMs;
+  private String sslTrustStoreLocation;
+  private String sslTrustStorePassword;
+  private String sslKeyStoreLocation;
+  private String sslKeyStorePassword;
 
   private static AppConfig defaultConfig;
 
@@ -36,7 +40,6 @@ public class AppConfig {
     if (defaultConfig == null) {
       AppConfig conf = new AppConfig();
       conf.bootstrapServers = "kafka:9092";
-      conf.securityProtocol = "";
       conf.defaultReplicationFactor = (short)1;
       conf.enableTopicDelete = false;
       conf.enableTopicImport = false;
@@ -62,7 +65,6 @@ public class AppConfig {
 
   public AppConfig(AppConfig config) {
     this.setBootstrapServers(config.getBootstrapServers());
-    this.setSecurityProtocol(config.getSecurityProtocol());
     this.setDefaultReplicationFactor(config.getDefaultReplicationFactor());
     this.setEnableTopicDelete(config.isEnabledTopicDelete());
     this.setEnableTopicImport(config.isEnabledTopicImport());
@@ -78,6 +80,11 @@ public class AppConfig {
     this.setMaxReplicationFactor(config.getMaxReplicationFactor());
     this.setMaxPartitions(config.getMaxPartitions());
     this.setMaxRetentionMs(config.getMaxRetentionMs());
+    this.setSecurityProtocol(config.getSecurityProtocol());
+    this.setSslTrustStoreLocation(config.getSslTrustStoreLocation());
+    this.setSslTrustStorePassword(config.getSslTrustStorePassword());
+    this.setSslKeyStoreLocation(config.getSslKeyStoreLocation());
+    this.setSslKeyStorePassword(config.getSslKeyStorePassword());
   }
 
   public String getBootstrapServers() {
@@ -85,12 +92,6 @@ public class AppConfig {
   }
   public void setBootstrapServers(String bootstrapServers) {
     this.bootstrapServers = bootstrapServers;
-  }
-  public String getSecurityProtocol() {
-    return securityProtocol;
-  }
-  public void setSecurityProtocol(String securityProtocol) {
-    this.securityProtocol = securityProtocol;
   }
   public short getDefaultReplicationFactor() {
     return defaultReplicationFactor;
@@ -182,6 +183,36 @@ public class AppConfig {
   public void setMaxRetentionMs(long maxRetentionMs) {
     this.maxRetentionMs = maxRetentionMs;
   }
+  public String getSecurityProtocol() {
+    return securityProtocol;
+  }
+  public void setSecurityProtocol(String securityProtocol) {
+    this.securityProtocol = securityProtocol;
+  }
+  public String getSslTrustStoreLocation() {
+    return sslTrustStoreLocation;
+  }
+  public void setSslTrustStoreLocation(String sslTrustStoreLocation) {
+    this.sslTrustStoreLocation = sslTrustStoreLocation;
+  }
+  public String getSslTrustStorePassword() {
+    return sslTrustStorePassword;
+  }
+  public void setSslTrustStorePassword(String sslTrustStorePassword) {
+    this.sslTrustStorePassword = sslTrustStorePassword;
+  }
+  public String getSslKeyStoreLocation() {
+    return sslKeyStoreLocation;
+  }
+  public void setSslKeyStoreLocation(String sslKeyStoreLocation) {
+    this.sslKeyStoreLocation = sslKeyStoreLocation;
+  }
+  public String getSslKeyStorePassword() {
+    return sslKeyStorePassword;
+  }
+  public void setSslKeyStorePassword(String sslKeyStorePassword) {
+    this.sslKeyStorePassword = sslKeyStorePassword;
+  }
 
   @Override
   public String toString() {
@@ -203,6 +234,8 @@ public class AppConfig {
       ", maxReplicationFactor=" + maxReplicationFactor +
       ", maxPartitions=" + maxPartitions +
       ", maxRetentionMs=" + maxRetentionMs +
+      ", sslTrustStoreLocation='" + sslTrustStoreLocation + '\'' +
+      ", sslKeyStoreLocation='" + sslKeyStoreLocation + '\'' +
       '}';
   }
 }

@@ -36,18 +36,6 @@ public class MeterManager implements AutoCloseable {
     return register(builder.register(registry));
   }
 
-  public Counter register(Counter.Builder builder) {
-    return register(builder.register(registry));
-  }
-
-  public Timer register(Timer.Builder builder) {
-    return register(builder.register(registry));
-  }
-
-  public DistributionSummary register(DistributionSummary.Builder builder) {
-    return register(builder.register(registry));
-  }
-
   private <T extends Meter> T register(T meter) {
     meters.put(meter.getId(), meter);
     return meter;
@@ -66,16 +54,8 @@ public class MeterManager implements AutoCloseable {
     close(meter.getId());
   }
 
-  public Meter getMeter(Meter.Id id) {
-    return meters.get(id);
-  }
-
   public MeterRegistry getRegistry() {
     return registry;
-  }
-
-  public Set<Meter.Id> getMeterIds() {
-    return meters.keySet();
   }
 
   @Override

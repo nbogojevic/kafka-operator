@@ -74,8 +74,8 @@ metadata:
   labels:
     config: kafka-topic  
 data:
-  partitions: "20"
-  replication-factor: "3"
+  num.partitions: "20"
+  repl.factor: "3"
   properties: |
     retention.ms=1000000
 ```
@@ -97,8 +97,8 @@ metadata:
     config: kafka-topic  
 data:
   name: Underscore_Kafka_Topic
-  partitions: "20"
-  replication-factor: "3"
+  num.partitions: "20"
+  repl.factor: "3"
   properties: |
     retention.ms=1000000
 ```
@@ -107,8 +107,8 @@ Kafka operator only manages topics that are defined in ConfigMaps. If a ConfigMa
 
 Default behavior:
 
-* if `partitions` is not provided, the number of partitions will be set to number of brokers
-* if `replication-factor` is not provided, the `DEFAULT_REPLICATION_FACTOR` value is used.
+* if `num.partitions` is not provided, the number of partitions will be set to number of brokers
+* if `repl.factor` is not provided, the `DEFAULT_REPLICATION_FACTOR` value is used.
 
 #### Protected topics
 
@@ -126,8 +126,8 @@ metadata:
   labels:
     config: kafka-topic  
 data:
-  partitions: "20"
-  replication-factor: "3"
+  num.partitions: "20"
+  repl.factor: "3"
   properties: |
     retention.ms=1000000
     compression.type=producer

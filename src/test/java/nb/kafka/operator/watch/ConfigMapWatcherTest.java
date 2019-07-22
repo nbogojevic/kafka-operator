@@ -88,9 +88,9 @@ public class ConfigMapWatcherTest {
   void testBuildTopicModelWithBadFormatProperties() {
     // Arrange
     Map<String, String> data = new HashMap<>();
-    data.put("partitions", "2o");
+    data.put("num.partitions", "2o");
     data.put("properties", "retention.ms=60111!!!");
-    data.put("replication-factor", "1");
+    data.put("repl.factor", "1");
 
     ObjectMeta metadata = new ObjectMeta();
     metadata.setName("topic-test");
@@ -370,9 +370,9 @@ public class ConfigMapWatcherTest {
 
   private ConfigMap makeConfigMap(String topicName, int partitions, short replicationFactor, long retentionTime) {
     Map<String, String> data = new HashMap<>();
-    data.put("partitions", Integer.toString(partitions));
+    data.put("num.partitions", Integer.toString(partitions));
     data.put("properties", "retention.ms=" + retentionTime);
-    data.put("replication-factor", Integer.toString(replicationFactor));
+    data.put("repl.factor", Integer.toString(replicationFactor));
 
     ObjectMeta metadata = new ObjectMeta();
     metadata.setName(topicName);

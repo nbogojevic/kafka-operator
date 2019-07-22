@@ -73,9 +73,9 @@ public class ConfigMapImporterTest {
     ConfigMap cm = importer.buildConfigMapResource(topic);
 
     // Assert
-    assertEquals("2", cm.getData().get("partitions"));
+    assertEquals("2", cm.getData().get("num.partitions"));
     assertEquals("test-topic", cm.getData().get("name"));
-    assertEquals("1", cm.getData().get("replication-factor"));
+    assertEquals("1", cm.getData().get("repl.factor"));
     assertEquals("false", cm.getData().get("acl"));
 
     for (Entry<String, String> entry : properties.entrySet()) {

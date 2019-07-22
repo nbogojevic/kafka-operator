@@ -26,8 +26,8 @@ import nb.kafka.operator.Topic;
 public class ConfigMapWatcher extends KubernetesWatcher<ConfigMap> {
 
   private static final String PROPERTIES_KEY = "properties";
-  private static final String REPLICATION_FACTOR_KEY = "replication-factor";
-  private static final String PARTITIONS_KEY = "partitions";
+  private static final String REPLICATION_FACTOR_KEY = "repl.factor";
+  private static final String PARTITIONS_KEY = "num.partitions";
   private static final String TOPIC_NAME_KEY = "name";
   private static final String ACL_KEY = "acl";
   private static final String KAFKA_TOPIC_LABEL_VALUE = "kafka-topic";

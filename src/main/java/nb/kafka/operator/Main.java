@@ -27,8 +27,8 @@ public final class Main {
     setupJmxRegistry(config.getOperatorId());
     Runnable stopHttpServer = setupPrometheusRegistry(config.getMetricsPort());
 
-    HealthServer.start(config);
     KafkaOperator operator = new KafkaOperator(config);
+    new HealthServer(operator).start(config.getHealthsPort());
 
     Runtime.getRuntime().addShutdownHook(new Thread(operator::shutdown));
     Runtime.getRuntime().addShutdownHook(new Thread(stopHttpServer));

@@ -1,5 +1,6 @@
 package nb.kafka.operator;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
@@ -7,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,10 +19,11 @@ import nb.kafka.operator.util.MeterManager;
 import nb.kafka.operator.watch.ConfigMapWatcher;
 
 public class KafkaOperatorStateTest {
-  private AppConfig config = AppConfig.defaultConfig();
+  private AppConfig config;
 
   @BeforeEach
   void setUp() {
+    config = AppConfig.defaultConfig();
     config.setBootstrapServers("localhost:9092");
   }
 
@@ -73,6 +76,24 @@ public class KafkaOperatorStateTest {
     } catch (RuntimeException e) {
     }
 
+    assertEquals(State.FAILED, operator.getState());
+  }
+
+  @Test
+  public void healthCheckFailedStateTest() throws Throwable {
+    config.setKafkaTimeoutMs(100);
+
+    KubernetesClient kubeClientMock = mock(KubernetesClient.class);
+    KafkaAdmin kafkaAdminMock = mock(KafkaAdmin.class);
+    ConfigMapWatcher watcherMock = mock(ConfigMapWatcher.class);
+    doThrow(ExecutionException.class).when(kafkaAdminMock).listTopics();
+
+    KafkaOperator operator = new KafkaOperator(config, kubeClientMock, kafkaAdminMock, watcherMock,
+        MeterManager.defaultMeterManager());
+
+    assertEquals(State.CREATED, operator.getState());
+
+    assertFalse(operator.checkOperatorState());
     assertEquals(State.FAILED, operator.getState());
   }
 }

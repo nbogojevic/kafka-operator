@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.micrometer.core.instrument.Gauge;
 import nb.kafka.operator.importer.ConfigMapImporter;
 import nb.kafka.operator.importer.TopicImporter;
+import nb.kafka.operator.model.OperatorError;
 import nb.kafka.operator.util.MeterManager;
 import nb.kafka.operator.util.TopicValidator;
 import nb.kafka.operator.watch.ConfigMapWatcher;
@@ -106,6 +107,20 @@ public class KafkaOperator {
 
   public void importTopics() {
     topicImporter.importTopics();
+  }
+
+  public boolean checkOperatorState() {
+    if (operatorState == State.FAILED) {
+      return false;
+    }
+    try (KafkaAdmin ka = new KafkaAdminImpl(config)) {
+      ka.listTopics();
+      return true;
+    } catch (TimeoutException | InterruptedException | ExecutionException e) { // NOSONAR
+      operatorState = State.FAILED;
+      log.error(String.format(OperatorError.KAFKA_UNREACHABLE.toString(), config.getBootstrapServers()));
+      return false;
+    }
   }
 
   private void manageTopic(Topic topic) {

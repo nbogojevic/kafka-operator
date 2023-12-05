@@ -13,7 +13,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<main.class>nb.kafka.operator.Main</main.class>
 		<version.kafka>1.0.0</version.kafka>
-		<version.logback>1.2.3</version.logback>
+		<version.logback>1.2.13</version.logback>
 		<version.metrics>3.2.3</version.metrics>
 		<version.fabric8.k8s.client>3.0.1</version.fabric8.k8s.client>
 		<version.fabric8.openshift.client>3.0.3</version.fabric8.openshift.client>
